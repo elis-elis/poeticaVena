@@ -1,14 +1,23 @@
 from flask_sqlalchemy import SQLAlchemy
-from os import path
+from sqlalchemy import inspect
 
 
 db = SQLAlchemy()
-DB_NAME = 'poeticaVENA_db'
-
 
 def create_database(app):
-    if not path.exists('website/' + DB_NAME):
-        with app.app_context():
+    with app.app_context():
+        inspector = inspect(db.engine)
+
+        table_names = ['poets', 'poems', 'poem_types', 'poem_details']
+
+        all_tables_exist = True
+        for table_name in table_names:
+            if not inspector.has_table(table_name):
+                all_tables_exist = False
+                break
+        if all_tables_exist:
+            print('Database already exists, skipping table creation.')
+        else:
             db.create_all()
-            print('database now exists! 👑')
+            print('Database and tables created! 👑')
             
