@@ -16,5 +16,7 @@ def create_app():
     app.register_blueprint(auth, url_prefix='/auth')
 
     create_database(app)
+    
+    print(f"Connected to database: {app.config['SQLALCHEMY_DATABASE_URI']}")
 
     return app

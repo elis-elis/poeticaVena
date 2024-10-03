@@ -1,4 +1,4 @@
-from . import db
+from .database import db
 from flask_login import UserMixin
 from sqlalchemy.sql import func
 
@@ -24,6 +24,8 @@ class Poem(db.Model):
     is_published = db.Column(db.Boolean, default=False)
     created_at = db.Column(db.DateTime(timezone=True), default=func.now())
     updated_at = db.Column(db.DateTime(timezone=True), onupdate=func.now())
+    poem_details = db.relationship('PoemDetails', backref='poem', lazy=True)
+
 
 class PoemType(db.Model):
     __tablename__ = 'poem_types'
