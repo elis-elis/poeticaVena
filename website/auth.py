@@ -9,10 +9,10 @@ auth = Blueprint('auth', __name__)
 
 @auth.route('/login', methods=['GET', 'POST'])
 def login():
-    print('🪭 blind spots in the eyes')
-    return render_template('login.html')
+    return '🪭 blind spots in the eyes'
+    # return render_template('login.html')
 
-@auth.route('register', methods=['GET', 'POST'])
+@auth.route('/register', methods=['GET', 'POST'])
 def register():
-    print('🦈 don\'T interrupt me hunny')
-    return render_template('register.html')
+    return '🦤 don\'T interrupt me, hunny'
+    # return render_template('register.html')

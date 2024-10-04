@@ -17,6 +17,4 @@ def create_app():
 
     create_database(app)
     
-    print(f"Connected to database: {app.config['SQLALCHEMY_DATABASE_URI']}")
-
     return app

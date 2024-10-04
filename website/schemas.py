@@ -23,4 +23,19 @@ class PoetResponse(BaseModel):
         orm_mode = True  # Allows reading data from SQLAlchemy objects
 
 
+class PemCreate(BaseModel):
+    title: str = Field(..., max_length=250)
+    poem_type_id: int
+    is_collaborative: Optional[bool] = False
 
+
+class PoemResponse(BaseModel):
+    id: int
+    title: str
+    is_collaborative: bool
+    created_at: datetime
+    update_at: Optional[datetime]
+
+    class Config:
+        orm_mode = True
+        
