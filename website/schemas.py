@@ -8,7 +8,7 @@ from typing import Optional
 class PoetCreate(BaseModel):
     poet_name: str = Field(..., max_length=50)
     email = EmailStr
-    password = str(..., max_length=20)
+    password = str(...,min_length=8, max_length=20)
 
 
 # This model is used to structure the data that gets sent back 
@@ -23,12 +23,13 @@ class PoetResponse(BaseModel):
         orm_mode = True  # Allows reading data from SQLAlchemy objects
 
 
-class PemCreate(BaseModel):
+class PoemCreate(BaseModel):
     title: str = Field(..., max_length=250)
     poem_type_id: int
     is_collaborative: Optional[bool] = False
 
 
+# This model is used to return the poem's data after it is created or fetched from the database.
 class PoemResponse(BaseModel):
     id: int
     title: str
@@ -38,4 +39,4 @@ class PoemResponse(BaseModel):
 
     class Config:
         orm_mode = True
-        
+
