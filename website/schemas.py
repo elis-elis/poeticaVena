@@ -20,7 +20,7 @@ class PoetResponse(BaseModel):
     created_at: datetime
 
     class Config:
-        orm_mode = True  # Allows reading data from SQLAlchemy objects
+        from_attributes = True  # Allows reading data from SQLAlchemy objects
 
 
 class PoemCreate(BaseModel):
@@ -38,5 +38,5 @@ class PoemResponse(BaseModel):
     update_at: Optional[datetime]
 
     class Config:
-        orm_mode = True
+        from_attributes = True
 
