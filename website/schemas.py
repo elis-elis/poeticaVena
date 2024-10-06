@@ -6,9 +6,9 @@ from typing import Optional
 # This model will ensure that when a user submits data to create a new poet, 
 # the input data is correctly formatted and valid before interacting with your database.
 class PoetCreate(BaseModel):
-    poet_name: str = Field(..., max_length=50)
-    email = EmailStr
-    password = str(...,min_length=8, max_length=20)
+    poet_name: str = Field(...,min_length=3, max_length=50)
+    email: EmailStr
+    password: str = Field(..., min_length=7, max_length=20)
 
 
 # This model is used to structure the data that gets sent back 

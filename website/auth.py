@@ -28,20 +28,28 @@ def login():
         # Find poet by email
         poet = Poet.query.filter_by(email=email).first()
         if poet and check_password_hash(poet.password_hash, password):
-            flash('Logged in successfully! 🦩', category='success')
+            # flash('Logged in successfully! 🦩', category='success')
 
             # Create a JWT access token
-            access_token = create_access_token(identity=poet.id, expires_delta=timedelta(hours=1))
+            # access_token = create_access_token(identity=poet.id, expires_delta=timedelta(hours=1))
 
             # Create a response and set the JWT token in a secure cookie
-            response = make_response(redirect(url_for('views.home')))
-            response.set_cookie('access_token', access_token, httponly=True, max_age=60*60)
-            
-            return response
+            #response = make_response(redirect(url_for('views.home')))
+            #response.set_cookie('access_token', access_token, httponly=True, max_age=60*60)
+            access_token = create_access_token(identity=poet.id, expires_delta=timedelta(hours=1))
+            print(f'Poet {poet.poet_name} logged in successfully!')  # Debug statement
+            return jsonify(access_token=access_token), 200
+            #return response
+            #print(f'poet(tess) {poet.poet_name} logged in successfully!')
+            #return jsonify(access_token=access_token), 200
         
         else:
-            flash('Incorrect password. 🦄 Please try again.', category='error')
-            return redirect(url_for('auth.login'))
+            # flash('Incorrect password. 🦄 Please try again.', category='error')
+            #return redirect(url_for('auth.login'))
+            print(f'Failed login attempt for {email}')  # Debug statement
+            return jsonify({"error": "Invalid email or password"}), 401
+    return jsonify({"message": "Please use POST method"}), 405
+
     
 
 @auth.route('/logout')
@@ -77,6 +85,7 @@ def register():
         try:
             poet_create = PoetCreate(**poet_data)
         except ValidationError as e:
+            print(e.json())  # print the validation errors in the terminal.
             for error in e.errors():
                 flash(error['msg'], category='info')    # Display validation errors
             return redirect(url_for('auth.register'))
@@ -100,9 +109,11 @@ def register():
 
         try:
             db.session.commit()
+            print('Poet registered and committed to the database.')  # Debug statement
             flash('Account created successfully! 👑', category='success')
             return redirect(url_for('auth.login'))
         except Exception as e:
             db.session.rollback()
+            print(f"Error during registration commit: {e}")  # Debug statement
             flash('An error occurred during registration. 🪭 Please try again.', category='error')
             return redirect(url_for('auth.register'))

@@ -8,15 +8,25 @@ from .schemas import PoemCreate, PoemResponse
 
 views = Blueprint('views', __name__)
 
-@views.route('/home', methods=['GET', 'POST'])
+@views.route('/', methods=['GET', 'POST'])
 @jwt_required()
-def profile():
+def home():
+    """
+    This function serves as an entry point for authenticated users.
+    """
     pass
 
 
 @views.route('/create-poem', methods=['POST'])
 @jwt_required()
 def create_poem():
+    """
+    This function handles the submission of new poems:
+        It retrieves the currently logged-in user's ID.
+        It validates the poem data using the PoemCreate Pydantic model.
+        If validation passes, it creates a new Poem entry in the database.
+        It provides user feedback using the flash() method and redirects the user to the poem detail page.
+    """
     # Get current logged-in user ID from JWT token
     poet_id = get_jwt_identity()
 
@@ -35,7 +45,12 @@ def create_poem():
         db.session.commit()
 
         flash('Poem created successfully! 🦓', category='success')
-        return redirect(url_for('views.home'))
+        return redirect(url_for('poem_detail', poem_id=new_poem.id))
+        # for example, if the poem_detail route is something like /poems/<poem_id>, 
+        # the user will be redirected to /poems/1 if the new poem’s ID is 1.
 
     except ValidationError as e:
         flash('There was an error with your poem submission. 🌊 Please try again.', category='success')
+        return redirect(url_for('create_poem_form'))
+        # For example, if the route for creating a new poem is /poems/new, 
+        # this redirection will send the user back to /poems/new.
