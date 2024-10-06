@@ -40,3 +40,19 @@ class PoemResponse(BaseModel):
     class Config:
         from_attributes = True
 
+
+# Used to validate incoming data for creating new poem types.
+class PoemTypeCreate(BaseModel):
+    name: str = Field(..., max_length=50)
+    description: str
+    criteria: str
+
+
+class PoemTypeResponse(BaseModel):
+    id: int
+    name: str
+    description: str
+    criteria: str
+
+    class Config:
+        from_attributes = True
