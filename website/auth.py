@@ -30,18 +30,13 @@ def login():
         if poet and check_password_hash(poet.password_hash, password):
             # flash('Logged in successfully! 🦩', category='success')
 
-            # Create a JWT access token
-            # access_token = create_access_token(identity=poet.id, expires_delta=timedelta(hours=1))
-
             # Create a response and set the JWT token in a secure cookie
             #response = make_response(redirect(url_for('views.home')))
             #response.set_cookie('access_token', access_token, httponly=True, max_age=60*60)
             access_token = create_access_token(identity=poet.id, expires_delta=timedelta(hours=1))
-            print(f'Poet {poet.poet_name} logged in successfully!')  # Debug statement
+            print(f'Poet(esse) {poet.poet_name} logged in successfully!')  # Debug statement
             return jsonify(access_token=access_token), 200
             #return response
-            #print(f'poet(tess) {poet.poet_name} logged in successfully!')
-            #return jsonify(access_token=access_token), 200
         
         else:
             # flash('Incorrect password. 🦄 Please try again.', category='error')
@@ -58,7 +53,7 @@ def logout():
     Logs the user out and redirects them to the login page.
     """
     flash('Logged out successfully! 🌈', category='success')
-    return redirect(url_for('auth.login'))
+    return redirect(url_for('auth.login'))  # later redirect to landing_page.html
 
 
 @auth.route('/register', methods=['GET', 'POST'])

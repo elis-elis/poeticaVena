@@ -3,7 +3,7 @@ from flask_jwt_extended import jwt_required, get_jwt_identity
 from pydantic import ValidationError
 from .models import Poem, Poet
 from .database import db
-from .schemas import PoemCreate, PoemResponse
+from .schemas import *
 
 
 views = Blueprint('views', __name__)
@@ -15,6 +15,22 @@ def home():
     This function serves as an entry point for authenticated users.
     """
     pass
+
+
+@views.route('/poem-types', methods=['GET'])
+def get_poem_types():
+    """
+    Fetch all available poem types and return them as JSON.
+    """
+    poem_types = Poem.query.all()   # The result is a list of PoemType objects
+
+    # poem_types_response = [PoemTypeResponse.model_validate(poem_type) for poem_type in poem_types]
+    poem_types_response = []
+    for poem_type in poem_types:
+        poem_type_response = PoemTypeResponse.model_validate(poem_type)
+        poem_types_response.append(poem_type_response)
+    
+    return jsonify(poem_types_response), 200
 
 
 @views.route('/create-poem', methods=['POST'])
