@@ -10,7 +10,7 @@ class Poet(db.Model, UserMixin):
     poet_name = db.Column(db.String(50), nullable=False, unique=True)
     email = db.Column(db.String(100), nullable=False, unique=True)
     password_hash = db.Column(db.String(260), nullable=False)
-    poems = db.relationship('Poem', backref='poet', lazy=True)
+    poems = db.relationship('Poem', backref='poet', lazy=True, passive_deletes=True)
     created_at = db.Column(db.DateTime(timezone=True), default=func.now())
 
 class Poem(db.Model):
@@ -24,7 +24,9 @@ class Poem(db.Model):
     is_published = db.Column(db.Boolean, default=False)
     created_at = db.Column(db.DateTime(timezone=True), default=func.now())
     updated_at = db.Column(db.DateTime(timezone=True), onupdate=func.now())
-    poem_details = db.relationship('PoemDetails', backref='poem', lazy=True)
+    poem_details = db.relationship('PoemDetails', backref='poem', lazy=True, passive_deletes=True)
+    poet = db.relationship('Poet', backref='poem', lazy=True)
+    poem_type = db.relationship('PoemType', backref='poem', lazy=True)
 
 
 class PoemType(db.Model):

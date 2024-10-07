@@ -2,6 +2,7 @@ from flask import Flask, jsonify
 from flask_jwt_extended import JWTManager, jwt_required, get_jwt_identity
 from config import Config
 from .database import db, create_database
+from .data_utils import initialize_poem_types
 
 
 def create_app():
@@ -21,6 +22,9 @@ def create_app():
     app.register_blueprint(auth, url_prefix='/auth')
 
     create_database(app)
+
+    with app.app_context():
+        initialize_poem_types()
     
     @app.route('/protected', methods=['GET'])
     @jwt_required()

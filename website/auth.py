@@ -35,7 +35,7 @@ def login():
             #response.set_cookie('access_token', access_token, httponly=True, max_age=60*60)
             access_token = create_access_token(identity=poet.id, expires_delta=timedelta(hours=1))
             print(f'Poet(esse) {poet.poet_name} logged in successfully!')  # Debug statement
-            return jsonify(access_token=access_token), 200
+            return jsonify(access_token=access_token, token_type="bearer"), 200
             #return response
         
         else:
@@ -104,7 +104,7 @@ def register():
 
         try:
             db.session.commit()
-            print('Poet registered and committed to the database.')  # Debug statement
+            print('Poet(esse) registered and committed to the database.')  # Debug statement
             flash('Account created successfully! 👑', category='success')
             return redirect(url_for('auth.login'))
         except Exception as e:
