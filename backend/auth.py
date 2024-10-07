@@ -105,10 +105,12 @@ def register():
         try:
             db.session.commit()
             print('Poet(esse) registered and committed to the database.')  # Debug statement
-            flash('Account created successfully! 👑', category='success')
-            return redirect(url_for('auth.login'))
+            #flash('Account created successfully! 👑', category='success')
+            #return redirect(url_for('auth.login'))
+            return jsonify(new_poet)
         except Exception as e:
             db.session.rollback()
             print(f"Error during registration commit: {e}")  # Debug statement
-            flash('An error occurred during registration. 🪭 Please try again.', category='error')
-            return redirect(url_for('auth.register'))
+            #flash('An error occurred during registration. 🪭 Please try again.', category='error')
+            #return redirect(url_for('auth.register'))
+            return jsonify()

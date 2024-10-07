@@ -6,9 +6,9 @@ from .database import db
 from .schemas import *
 
 
-views = Blueprint('views', __name__)
+routes = Blueprint('routes', __name__)
 
-@views.route('/', methods=['GET', 'POST'])
+@routes.route('/', methods=['GET', 'POST'])
 @jwt_required()
 def home():
     """
@@ -17,7 +17,7 @@ def home():
     pass
 
 
-@views.route('/poem-types', methods=['GET'])
+@routes.route('/poem-types', methods=['GET'])
 def get_poem_types():
     """
     Fetch all available poem types and return them as JSON.
@@ -33,7 +33,7 @@ def get_poem_types():
     return jsonify(poem_types_response), 200
 
 
-@views.route('/create-poem', methods=['POST'])
+@routes.route('/create-poem', methods=['POST'])
 @jwt_required()
 def create_poem():
     """

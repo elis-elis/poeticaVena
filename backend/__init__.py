@@ -14,11 +14,11 @@ def create_app():
     db.init_app(app)
 
     from .auth import auth
-    from .views import views
+    from .routes import views
 
     jwt = JWTManager(app)
 
-    app.register_blueprint(views, url_prefix='/views')
+    app.register_blueprint(routes, url_prefix='/views')
     app.register_blueprint(auth, url_prefix='/auth')
 
     create_database(app)
