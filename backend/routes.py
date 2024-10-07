@@ -38,7 +38,7 @@ def get_poem_types():
     return jsonify(poem_types_response), 200
 
 
-@routes.route('/create-poem', methods=['POST'])
+@routes.route('/submit-poem', methods=['POST'])
 @jwt_required()
 def poem_submission():
     """
@@ -65,8 +65,15 @@ def poem_submission():
         db.session.add(new_poem)
         db.session.commit()
 
+        # Manually print the new_poem fields
+        print("New Poem created:", new_poem.id, new_poem.title, new_poem.created_at)
+
         # Use PoemResponse Pydantic model to return the poem data
         poem_response = PoemResponse.model_validate(new_poem)
+
+        # Print the validated Pydantic model
+        print("Pydantic Model:", poem_response)
+
         return jsonify(poem_response.model_dump()), 201
 
     except ValidationError as e:

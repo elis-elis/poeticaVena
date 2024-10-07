@@ -10,8 +10,10 @@ class Poet(db.Model, UserMixin):
     poet_name = db.Column(db.String(50), nullable=False, unique=True)
     email = db.Column(db.String(100), nullable=False, unique=True)
     password_hash = db.Column(db.String(260), nullable=False)
-    poems = db.relationship('Poem', backref='poet', lazy=True, passive_deletes=True)
     created_at = db.Column(db.DateTime(timezone=True), default=func.now())
+    # One-to-many relationship with Poem
+    poems = db.relationship('Poem', backref='poet', lazy=True, passive_deletes=True)
+
 
 class Poem(db.Model):
     __tablename__ = 'poems'
@@ -24,9 +26,8 @@ class Poem(db.Model):
     is_published = db.Column(db.Boolean, default=False)
     created_at = db.Column(db.DateTime(timezone=True), default=func.now())
     updated_at = db.Column(db.DateTime(timezone=True), onupdate=func.now())
+    # One-to-one or one-to-many relationship with PoemDetails
     poem_details = db.relationship('PoemDetails', backref='poem', lazy=True, passive_deletes=True)
-    poet = db.relationship('Poet', backref='poem', lazy=True)
-    poem_type = db.relationship('PoemType', backref='poem', lazy=True)
 
 
 class PoemType(db.Model):
@@ -36,7 +37,8 @@ class PoemType(db.Model):
     name = db.Column(db.String(50), nullable=False, unique=True)
     description = db.Column(db.Text, nullable=False)
     criteria = db.Column(db.Text, nullable=False)
-    poems = db.relationship('Poem', backref='poem_type', lazy=True)
+    # One-to-many relationship with Poem
+    poem = db.relationship('Poem', backref='poem_type', lazy=True)
 
 class PoemDetails(db.Model):
     # Handles contributions, from a single poet or multiple poets for collaborative poems. 

@@ -25,14 +25,14 @@ class PoemCreate(BaseModel):
     title: str = Field(..., max_length=250)
     poem_type_id: int
     poet_id: int
-    
+    is_collaborative: bool = Field(default=False)
+
 
 class PoemResponse(PoemCreate):
     id: int
-    is_collaborative: bool
     is_published: bool
     created_at: datetime
-    update_at: datetime
+    updated_at: Optional[datetime] = None
 
     class Config:
         from_attributes = True

@@ -19,7 +19,7 @@ def create_database(app):
                 break
 
         if all_tables_exist:
-            print('Database already exists, skipping table creation.')
+            print('Database already exists, skipping table creation. 🛝')
         else:
             try:
                 # These imports are required for SQLAlchemy to create the tables
