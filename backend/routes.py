@@ -1,20 +1,23 @@
-from flask import Blueprint, jsonify, request, flash, redirect, url_for
+from flask import Blueprint, jsonify, request
 from flask_jwt_extended import jwt_required, get_jwt_identity
 from pydantic import ValidationError
-from .models import Poem, Poet
+from .models import Poem, PoemType, Poet
 from .database import db
-from .schemas import *
+from .schemas import PoemCreate, PoemTypeResponse, PoemResponse
 
 
 routes = Blueprint('routes', __name__)
 
-@routes.route('/', methods=['GET', 'POST'])
+
+@routes.route('/', methods=['GET'])
 @jwt_required()
 def home():
     """
     This function serves as an entry point for authenticated users.
+    Currently returns a placeholder message for authenticated users.
     """
-    pass
+    poet_id = get_jwt_identity()    # Get the current user (poet) ID from the JWT token
+    return jsonify(message=f'You are (almost) welcomed here, dear poet(esse) with ID {poet_id}. 🍸'), 200
 
 
 @routes.route('/poem-types', methods=['GET'])
@@ -22,28 +25,30 @@ def get_poem_types():
     """
     Fetch all available poem types and return them as JSON.
     """
-    poem_types = Poem.query.all()   # The result is a list of PoemType objects
+    poem_types = PoemType.query.all()   # The result is a list of PoemType objects
 
+    # Validate each PoemType object using the PoemTypeResponse schema
     # poem_types_response = [PoemTypeResponse.model_validate(poem_type) for poem_type in poem_types]
     poem_types_response = []
     for poem_type in poem_types:
         poem_type_response = PoemTypeResponse.model_validate(poem_type)
         poem_types_response.append(poem_type_response)
     
+    # Return the list of poem types as JSON
     return jsonify(poem_types_response), 200
 
 
 @routes.route('/create-poem', methods=['POST'])
 @jwt_required()
-def create_poem():
+def poem_submission():
     """
     This function handles the submission of new poems:
-        It retrieves the currently logged-in user's ID.
-        It validates the poem data using the PoemCreate Pydantic model.
-        If validation passes, it creates a new Poem entry in the database.
-        It provides user feedback using the flash() method and redirects the user to the poem detail page.
+        - Retrieves the currently logged-in user's ID.
+        - Validates the poem data using the PoemCreate Pydantic model.
+        - Creates a new Poem entry in the database if validation passes.
+        - Returns a JSON response with the poem details or error message.
     """
-    # Get current logged-in user ID from JWT token
+    # Get current logged-in user (poet) ID from JWT token
     poet_id = get_jwt_identity()
 
     try:
@@ -60,13 +65,13 @@ def create_poem():
         db.session.add(new_poem)
         db.session.commit()
 
-        flash('Poem created successfully! 🦓', category='success')
-        return redirect(url_for('poem_detail', poem_id=new_poem.id))
-        # for example, if the poem_detail route is something like /poems/<poem_id>, 
-        # the user will be redirected to /poems/1 if the new poem’s ID is 1.
+        # Use PoemResponse Pydantic model to return the poem data
+        poem_response = PoemResponse.model_validate(new_poem)
+        return jsonify(poem_response.model_dump()), 201
 
     except ValidationError as e:
-        flash('There was an error with your poem submission. 🌊 Please try again.', category='success')
-        return redirect(url_for('create_poem_form'))
-        # For example, if the route for creating a new poem is /poems/new, 
-        # this redirection will send the user back to /poems/new.
+        return jsonify({'errors': e.errors()}), 400
+    
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'error': f'An error occurred: {str(e)}'}), 500

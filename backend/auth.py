@@ -3,7 +3,7 @@ from .database import db
 from werkzeug.security import generate_password_hash, check_password_hash
 from flask_jwt_extended import create_access_token
 from .models import Poet
-from .schemas import PoetCreate
+from .schemas import PoetCreate, PoetResponse
 from datetime import timedelta
 from pydantic import ValidationError
 
@@ -78,7 +78,9 @@ def register():
     try:
         db.session.commit()
         print('Poet(esse) registered and committed to the database.')  # Debug statement
-        return ({'id': new_poet, 'poet_name': new_poet.poet_name, 'email': new_poet.email}), 201
+        # Use PoetResponse Pydantic model to structure the response
+        poet_response = PoetResponse.model_validate(new_poet)
+        return jsonify(poet_response.model_dump()), 201
 
     except Exception as e:
         db.session.rollback()
