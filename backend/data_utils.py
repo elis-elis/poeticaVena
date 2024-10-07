@@ -1,10 +1,12 @@
 from .database import db
 from sqlalchemy.exc import SQLAlchemyError  # SQLAlchemy exception base class
+from .schemas import PoemTypeResponse
 
 
 def add_poem_type(name, description, criteria):
     """
     Utility function to add a poem type to the database.
+    Returns PoemTypeResponse on success, and False on failure.
     """
     from .models import PoemType    # Import model only when needed to avoid circular imports
     
@@ -19,15 +21,17 @@ def add_poem_type(name, description, criteria):
         db.session.add(new_poem_type)
         db.session.commit()
 
-        print(f"Poem type '{name}' added.")
+        print(f"Poem type '{name}' added. 🎯")
+        # Return the new poem type using the PoemTypeResponse Pydantic model
+        poem_type_response = PoemTypeResponse.model_validate(new_poem_type)
+        return poem_type_response
+
     except SQLAlchemyError as e:
         # Roll back the session in case of any error to avoid inconsistent database state
         db.session.rollback()
         print(f"Error adding poem type '{name}: e")
         return False
     
-    return True
-
 
 def initialize_poem_types():
     """
@@ -45,5 +49,5 @@ def initialize_poem_types():
         if not PoemType.query.filter_by(name=name).first():
             add_poem_type(name, description, criteria)
 
-    print('Poem types initialized (if not already present).')
+    print('Poem types initialized (if not already present). 🍬')
     
