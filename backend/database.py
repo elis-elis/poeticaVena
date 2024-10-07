@@ -22,6 +22,7 @@ def create_database(app):
             print('Database already exists, skipping table creation.')
         else:
             try:
+                # These imports are required for SQLAlchemy to create the tables
                 from .models import Poet, Poem, PoemType, PoemDetails
                 db.create_all()
                 print('Database and tables created! 👑')
