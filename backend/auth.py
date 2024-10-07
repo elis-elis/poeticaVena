@@ -1,4 +1,4 @@
-from flask import Blueprint, render_template, request, flash, redirect, url_for, jsonify, make_response
+from flask import Blueprint, request, jsonify
 from .database import db
 from werkzeug.security import generate_password_hash, check_password_hash
 from flask_jwt_extended import create_access_token
@@ -11,106 +11,76 @@ from pydantic import ValidationError
 auth = Blueprint('auth', __name__)
 
 
-@auth.route('/login', methods=['GET', 'POST'])
+@auth.route('/login', methods=['POST'])
 def login():
     """
     Poets can log in with their email and password. 
-    If valid, they are logged in and redirected to the home page. 
     If not, appropriate error messages are shown.
     """
-    if request.method == 'GET':
-        return render_template('login.html')
+    data = request.get_json()   # Get JSON data from request body
+    # Extract email and password from the request data
+    email = data.get('email')
+    password = data.get('password')
+
+    # Find poet by email
+    poet = Poet.query.filter_by(email=email).first()
+    if poet and check_password_hash(poet.password_hash, password):
+        access_token = create_access_token(identity=poet.id, expires_delta=timedelta(hours=1))
+        print(f'Poet(esse) {poet.poet_name} logged in successfully!')  # Debug statement
+        return jsonify(access_token=access_token, token_type="bearer"), 200
     
-    if request.method == 'POST':
-        email = request.form.get('email')
-        password = request.form.get('password')
-
-        # Find poet by email
-        poet = Poet.query.filter_by(email=email).first()
-        if poet and check_password_hash(poet.password_hash, password):
-            # flash('Logged in successfully! 🦩', category='success')
-
-            # Create a response and set the JWT token in a secure cookie
-            #response = make_response(redirect(url_for('views.home')))
-            #response.set_cookie('access_token', access_token, httponly=True, max_age=60*60)
-            access_token = create_access_token(identity=poet.id, expires_delta=timedelta(hours=1))
-            print(f'Poet(esse) {poet.poet_name} logged in successfully!')  # Debug statement
-            return jsonify(access_token=access_token, token_type="bearer"), 200
-            #return response
-        
-        else:
-            # flash('Incorrect password. 🦄 Please try again.', category='error')
-            #return redirect(url_for('auth.login'))
-            print(f'Failed login attempt for {email}')  # Debug statement
-            return jsonify({"error": "Invalid email or password"}), 401
-    return jsonify({"message": "Please use POST method"}), 405
-
+    else:
+        print(f'Failed login attempt for {email}')  # Debug statement
+        return jsonify({"error": "Invalid email or password. 🪭 "}), 401
     
 
-@auth.route('/logout')
+@auth.route('/logout', methods=['POST'])
 def logout():
     """
-    Logs the user out and redirects them to the login page.
+    Logs the user out and returns JSON response.
     """
-    flash('Logged out successfully! 🌈', category='success')
-    return redirect(url_for('auth.login'))  # later redirect to landing_page.html
+    return jsonify({'message': 'Logged out successfully! 🌈'}), 200
 
 
-@auth.route('/register', methods=['GET', 'POST'])
+@auth.route('/register', methods=['POST'])
 def register():
     """
-    New poets can register for an account after passing several validation checks. 
-    Their password is securely hashed, and their account is saved to the database. 
-    If successful, they are redirected to the log-in page.
+    New poets can register for an account after passing validation checks. 
+    Their password is hashed, and account is saved to the database.
     """
-    # Handle GET request (render the registration form)
-    if request.method == 'GET':
-        return render_template('register.html')
 
-    # Handle POST request (user submits the registration form)
-    if request.method == 'POST':
-        # Retrieve form data
-        poet_data = {
-            "poet_name": request.form.get('poet_name'),
-            "email": request.form.get('email'),
-            "password": request.form.get('password')
-        }
+    # Retrieve JSON data from request body
+    poet_data = request.json
 
-        # Validate using Pydantic model
-        try:
-            poet_create = PoetCreate(**poet_data)
-        except ValidationError as e:
-            print(e.json())  # print the validation errors in the terminal.
-            for error in e.errors():
-                flash(error['msg'], category='info')    # Display validation errors
-            return redirect(url_for('auth.register'))
+    # Validate using Pydantic model
+    try:
+        poet_create = PoetCreate(**poet_data)
+    except ValidationError as e:
+        # Collect validation errors and return them as a JSON response
+        return jsonify({'errors': e.errors()}), 400
 
-        # Step 1: Check if the email already exists
-        existing_poet = Poet.query.filter_by(email=poet_create.email).first()
-        if existing_poet:
-            flash('Email already exists. 🥝', category='info')
-            return redirect(url_for('auth.register'))        
-            
-        # Step 2: Hash the password
-        hashed_password = generate_password_hash(poet_create.password)
+    # Step 1: Check if the email already exists
+    existing_poet = Poet.query.filter_by(email=poet_create.email).first()
+    if existing_poet:
+        return jsonify({'error': 'Email already exists. 🥝'}), 409  # Conflict error
+        
+    # Step 2: Hash the password
+    hashed_password = generate_password_hash(poet_create.password)
 
-        # Step 3: Create new poet and save to the database
-        new_poet = Poet(
-                poet_name=poet_create.poet_name,
-                email=poet_create.email,
-                password_hash=hashed_password
-            )
-        db.session.add(new_poet)
+    # Step 3: Create new poet and save to the database
+    new_poet = Poet(
+            poet_name=poet_create.poet_name,
+            email=poet_create.email,
+            password_hash=hashed_password
+        )
+    db.session.add(new_poet)
 
-        try:
-            db.session.commit()
-            print('Poet(esse) registered and committed to the database.')  # Debug statement
-            #flash('Account created successfully! 👑', category='success')
-            #return redirect(url_for('auth.login'))
-            return jsonify(new_poet)
-        except Exception as e:
-            db.session.rollback()
-            print(f"Error during registration commit: {e}")  # Debug statement
-            #flash('An error occurred during registration. 🪭 Please try again.', category='error')
-            #return redirect(url_for('auth.register'))
-            return jsonify()
+    try:
+        db.session.commit()
+        print('Poet(esse) registered and committed to the database.')  # Debug statement
+        return ({'id': new_poet, 'poet_name': new_poet.poet_name, 'email': new_poet.email}), 201
+
+    except Exception as e:
+        db.session.rollback()
+        print(f"Error during registration commit: {e}")  # Debug statement
+        return jsonify({'error': f'An error occurred: {str(e)}'}), 500

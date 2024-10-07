@@ -14,11 +14,11 @@ def create_app():
     db.init_app(app)
 
     from .auth import auth
-    from .routes import views
+    from .routes import routes
 
     jwt = JWTManager(app)
 
-    app.register_blueprint(routes, url_prefix='/views')
+    app.register_blueprint(routes, url_prefix='/routes')
     app.register_blueprint(auth, url_prefix='/auth')
 
     create_database(app)
@@ -30,8 +30,6 @@ def create_app():
     @jwt_required()
     def protected():
         current_user = get_jwt_identity()
-        print("Protected route accessed")  # Add this to debug
-        print(f'User ID: {current_user}')  # Debug statement
         return jsonify(logged_in_as=current_user), 200
 
     return app
