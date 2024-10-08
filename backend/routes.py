@@ -1,9 +1,9 @@
 from flask import Blueprint, jsonify, request
 from flask_jwt_extended import jwt_required, get_jwt_identity
 from pydantic import ValidationError
-from .models import Poem, PoemType, Poet
+from .models import Poem, PoemType, Poet, PoemDetails
 from .database import db
-from .schemas import PoemCreate, PoemTypeResponse, PoemResponse
+from .schemas import PoemCreate, PoemTypeResponse, PoemResponse, PoemDetailsCreate, PoemDetailsResponse
 
 
 routes = Blueprint('routes', __name__)
@@ -40,7 +40,7 @@ def get_poem_types():
 
 @routes.route('/submit-poem', methods=['POST'])
 @jwt_required()
-def poem_submission():
+def submit_poem():
     """
     This function handles the submission of new poems:
         - Retrieves the currently logged-in user's ID.
@@ -78,6 +78,65 @@ def poem_submission():
 
         return jsonify(poem_response.model_dump()), 201
 
+    except ValidationError as e:
+        return jsonify({'errors': e.errors()}), 400
+    
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'error': f'An error occurred: {str(e)}'}), 500
+    
+
+@routes.route('/submit-poem-details', methods=['POST'])
+@jwt_required()
+def submit_poem_details():
+    """
+    This route handles the submission of poem details (actual poetry content).
+    It supports both individual and collaborative poem submissions.
+    """
+    poet_id =  get_jwt_identity()
+
+    try:
+        # Validate incoming data using PoemDetailsCreate Pydantic model
+        poem_details_data = PoemDetailsCreate(**request.json)
+        
+        # This prevents poets from submitting content for poems they don’t own, adding an extra layer of security
+        if poem_details_data.poet_id != poet_id:
+            return jsonify({'error': 'You are not authorized to submit content for this poem. 🍳'}), 403
+        
+        # Check if the poem exists and whether it is collaborative or not
+        poem = Poem.query.get(poem_details_data.poem_id)
+
+        if not poem:
+            return jsonify({'error': 'Poem was not found.'}), 404
+        
+        # Check if the poem is collaborative, and if the submission fits the type of poem
+        if poem.is_collaborative:
+            # Collaborative poem logic
+            print(f'Collaborative poem: {poem.title}')
+
+        else:
+            # Individual poem logic
+            # This line queries the database to count how many entries in the PoemDetails table already exist for the given poem.id
+            exisiting_contributions = PoemDetails.query.filter_by(poet_id=poem.id).count()
+            if exisiting_contributions > 0:
+                return jsonify({'error': 'This poem is not collaborative and already has content. 🪐'}), 400
+
+        # Create the PoemDetails entry
+        poem_details = PoemDetails(
+            poem_id=poem_details_data.poem_id,
+            poet_id=poem_details_data.poet_id,
+            content=poem_details_data.content
+        )
+
+        db.session.add(poem_details)
+        db.session.commit()
+        db.session.refresh(poem_details)
+
+        # Return the new PoemDetails as a response
+        poem_details_response = PoemDetailsResponse.model_validate(poem_details)
+
+        return jsonify(poem_details_response.model_dump()), 201
+    
     except ValidationError as e:
         return jsonify({'errors': e.errors()}), 400
     
