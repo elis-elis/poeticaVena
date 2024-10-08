@@ -6,9 +6,9 @@ from typing import Optional
 # Models for Poet
 
 class PoetCreate(BaseModel):
-    poet_name: str = Field(...,min_length=3, max_length=50)
+    poet_name: str = Field(..., min_length=3)
     email: EmailStr
-    password: str = Field(..., min_length=7, max_length=20)
+    password_hash: str = Field(..., min_length=7)
 
 
 class PoetResponse(PoetCreate):

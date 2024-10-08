@@ -64,6 +64,8 @@ def poem_submission():
         )
         db.session.add(new_poem)
         db.session.commit()
+        db.session.refresh(new_poem)
+
 
         # Manually print the new_poem fields
         print("New Poem created:", new_poem.id, new_poem.title, new_poem.created_at)

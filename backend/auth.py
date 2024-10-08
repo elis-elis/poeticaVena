@@ -26,7 +26,7 @@ def login():
     poet = Poet.query.filter_by(email=email).first()
     if poet and check_password_hash(poet.password_hash, password):
         access_token = create_access_token(identity=poet.id, expires_delta=timedelta(hours=1))
-        print(f'Poet(esse) {poet.poet_name} logged in successfully!')  # Debug statement
+        print(f'Poet(esse) {poet.poet_name} logged in successfully! 🚀')  # Debug statement
         return jsonify(access_token=access_token, token_type="bearer"), 200
     
     else:
@@ -65,7 +65,7 @@ def register():
         return jsonify({'error': 'Email already exists. 🥝'}), 409  # Conflict error
         
     # Step 2: Hash the password
-    hashed_password = generate_password_hash(poet_create.password)
+    hashed_password = generate_password_hash(poet_create.password_hash)
 
     # Step 3: Create new poet and save to the database
     new_poet = Poet(
@@ -77,12 +77,13 @@ def register():
 
     try:
         db.session.commit()
-        print('Poet(esse) registered and committed to the database.')  # Debug statement
+        db.session.refresh(new_poet)
+        print('Poet(esse) registered and committed to the database. 🍰')  # Debug statement
         # Use PoetResponse Pydantic model to structure the response
         poet_response = PoetResponse.model_validate(new_poet)
         return jsonify(poet_response.model_dump()), 201
 
     except Exception as e:
         db.session.rollback()
-        print(f"Error during registration commit: {e}")  # Debug statement
+        print(f"Error during registration commit: {e}. 🥒")  # Debug statement
         return jsonify({'error': f'An error occurred: {str(e)}'}), 500
