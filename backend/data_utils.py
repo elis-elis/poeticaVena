@@ -1,3 +1,4 @@
+import json
 from .database import db
 from sqlalchemy.exc import SQLAlchemyError  # SQLAlchemy exception base class
 from .schemas import PoemTypeResponse
@@ -40,14 +41,33 @@ def initialize_poem_types():
     from .models import PoemType
 
     poem_types = [
-        ('Haiku', 'A Japanese unrhymed poem format consisting of 17 syllables arranged in three lines. Often focusing on images from nature, it emphasizes simplicity, intensity, and directness of expression.', '3 lines, syllable structure 5-7-5'),
-        ('Nonet', 'Poem of nine lines with each line having one syllable less. It can be on any subject and rhyming is optional.', '9 lines, decreasing syllable count from 9 to 1'),
-        ('Limerick', 'A five line poem with a rhyming pattern of AABBA. It usually tells the tale of someone doing something or something happening to them. It is usually written in a humorous way, and the third and fourth lines are usually shorter than the first, second and fith.', '5 lines, with an AABBA rhyme scheme')
+        ('Haiku',
+        'A Japanese unrhymed poem format consisting of 17 syllables arranged in three lines. Often focusing on images from nature, it emphasizes simplicity, intensity, and directness of expression.',
+        {
+            'max_lines': 3,
+            'syllable_structure': '5-7-5',
+            'rhyme_scheme': None
+        }),
+        ('Nonet',
+        'Poem of nine lines with each line having one syllable less. It can be on any subject and rhyming is optional.',
+        {
+            'max_lines': 9,
+            'syllable_structure': '9-8-7-6-5-4-3-2-1',
+            'rhyme_scheme': None
+        }),
+        ('Limerick',
+        'A five line poem with a rhyming pattern of AABBA. It usually tells the tale of someone doing something or something happening to them. It is usually written in a humorous way, and the third and fourth lines are usually shorter than the first, second and fith.',
+        {
+            'max_lines': 5,
+            'syllable_structure': None,
+            'rhyme_scheme': 'AABBA'
+        }),
     ]
 
     for name, description, criteria in poem_types:
         if not PoemType.query.filter_by(name=name).first():
-            add_poem_type(name, description, criteria)
+            # Save criteria as JSON string in the database
+            add_poem_type(name, description, json.dump(criteria))
 
     print('Poem types initialized (if not already present). 🍬')
     

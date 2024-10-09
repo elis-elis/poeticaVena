@@ -125,12 +125,12 @@ def submit_poem_details():
 
             if exisiting_contributions == 0:
                 # First contribution, the poet is setting the first line
-                print(f'First contribution to collaborative poem by poet {poet_id}.')
+                print(f'First contribution to collaborative poem by poet(esse) ID {poet_id}.')
             else:
                 # Check if the same poet is contributing again or if it is out of sequence
                 last_contribution = PoemDetails.query.filter_by(poem_id=poem.id).order_by(PoemDetails.submitted_at.desc()).first()
                 if last_contribution == poet_id:
-                    return jsonify({'error': 'You cannot contribute consecutive lines.'}), 400
+                    return jsonify({'error': 'You cannot contribute consecutive lines. See other options. 🦖'}), 400
                 
             # Send the content to the AI for validation (pseudo-code, integrate your AI logic here)
             content_valid = check_ai_validation(poem_details_data.content, poem_type.criteria)
