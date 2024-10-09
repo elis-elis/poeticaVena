@@ -92,6 +92,8 @@ def submit_poem_details():
     """
     This route handles the submission of poem details (actual poetry content).
     It supports both individual and collaborative poem submissions.
+    Collaborative poems are built line-by-line, validated by AI, and completed
+    once all contributions pass the poem type's criteria.
     """
     poet_id =  get_jwt_identity()
 
@@ -109,33 +111,78 @@ def submit_poem_details():
         if not poem:
             return jsonify({'error': 'Poem was not found.'}), 404
         
-        # Check if the poem is collaborative, and if the submission fits the type of poem
+        # Collaborative poem logic
         if poem.is_collaborative:
-            # Collaborative poem logic
             print(f'Collaborative poem: {poem.title}')
+            
+            # Get poem type to validate criteria
+            poem_type = PoemType.query.get(poem.poem_type_id)
+            if not poem_type:
+                return jsonify({'error': 'Poem type was not found. ⚡️'}), 404
+            
+            # Check if this is the first contribution
+            exisiting_contributions = PoemDetails.query.filter_by(poet_id=poem.id).count()
 
+            if exisiting_contributions == 0:
+                # First contribution, the poet is setting the first line
+                print(f'First contribution to collaborative poem by poet {poet_id}.')
+            else:
+                # Check if the same poet is contributing again or if it is out of sequence
+                last_contribution = PoemDetails.query.filter_by(poem_id=poem.id).order_by(PoemDetails.submitted_at.desc()).first()
+                if last_contribution == poet_id:
+                    return jsonify({'error': 'You cannot contribute consecutive lines.'}), 400
+                
+            # Send the content to the AI for validation (pseudo-code, integrate your AI logic here)
+            content_valid = check_ai_validation(poem_details_data.content, poem_type.criteria)
+            
+            if not content_valid:
+                return jsonify({'error': 'Contribution didn\'t pass AI validation. Please try again and good luck. 🌦'}), 400
+            
+            # Publish the line if it passes AI validation
+            poem_details = PoemDetails(
+                poem_id=poem_details_data.poem_id,
+                poet_id=poem_details_data.poet_id,
+                content=poem_details_data.content
+            )
+
+            db.seesio.add(poem_details)
+            db.session.commit()
+            db.session.refresh(poem_details)
+
+            # Check if this is the last contribution for the poem
+            max_lines = 5  # make this dynamic!
+            if exisiting_contributions + 1 >= max_lines:
+                poem.is_published = True
+                db.session.commit()
+                return jsonify({'message': 'Poem is now completed and published. Thank you for your contributions. 🌵'}), 201
+            
+            # Return the new PoemDetails as a response
+            poem_details_response = PoemDetailsResponse.model_validate(poem_details)
+
+            return jsonify(poem_details_response.model_dump()), 201
+            
+        # Individual poem logic
         else:
-            # Individual poem logic
             # This line queries the database to count how many entries in the PoemDetails table already exist for the given poem.id
             exisiting_contributions = PoemDetails.query.filter_by(poet_id=poem.id).count()
             if exisiting_contributions > 0:
                 return jsonify({'error': 'This poem is not collaborative and already has content. 🪐'}), 400
+            
+            # Create the PoemDetails entry for individual poem
+            poem_details = PoemDetails(
+                poem_id=poem_details_data.poem_id,
+                poet_id=poem_details_data.poet_id,
+                content=poem_details_data.content
+            )
 
-        # Create the PoemDetails entry
-        poem_details = PoemDetails(
-            poem_id=poem_details_data.poem_id,
-            poet_id=poem_details_data.poet_id,
-            content=poem_details_data.content
-        )
+            db.seesio.add(poem_details)
+            db.session.commit()
+            db.session.refresh(poem_details)
 
-        db.session.add(poem_details)
-        db.session.commit()
-        db.session.refresh(poem_details)
+            # Return the new PoemDetails as a response
+            poem_details_response = PoemDetailsResponse.model_validate(poem_details)
 
-        # Return the new PoemDetails as a response
-        poem_details_response = PoemDetailsResponse.model_validate(poem_details)
-
-        return jsonify(poem_details_response.model_dump()), 201
+            return jsonify(poem_details_response.model_dump()), 201
     
     except ValidationError as e:
         return jsonify({'errors': e.errors()}), 400
@@ -143,3 +190,8 @@ def submit_poem_details():
     except Exception as e:
         db.session.rollback()
         return jsonify({'error': f'An error occurred: {str(e)}'}), 500
+
+
+
+def check_ai_validation(content: str, criteria: str) -> bool:
+    pass
