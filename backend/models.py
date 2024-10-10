@@ -36,7 +36,7 @@ class PoemType(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(50), nullable=False, unique=True)
     description = db.Column(db.Text, nullable=False)
-    criteria = db.Column(db.Text, nullable=False)
+    criteria = db.Column(db.JSON, nullable=False)
     # One-to-many relationship with Poem
     poem = db.relationship('Poem', backref='poem_type', lazy=True)
 
