@@ -67,7 +67,7 @@ def initialize_poem_types():
     for name, description, criteria in poem_types:
         if not PoemType.query.filter_by(name=name).first():
             # Save criteria as JSON string in the database
-            add_poem_type(name, description, json.dump(criteria))
+            add_poem_type(name, description, json.dumps(criteria))
 
     print('Poem types initialized (if not already present). 🍬')
     

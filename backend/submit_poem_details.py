@@ -1,8 +1,8 @@
-from flask import jsonify
+from flask import jsonify, json
 from .database import db
 from .models import Poem, PoemType, PoemDetails
 from .schemas import PoemDetailsResponse
-from .ai_val import check_ai_validation
+from .ai_val import fetch_poem_validation
 
 
 def is_authorized_poet(requested_poet_id, authenticated_poet_id):
@@ -50,7 +50,7 @@ def save_poem_details(poem_details_data):
         content=poem_details_data.content
     )
 
-    db.seesio.add(poem_details)
+    db.seesion.add(poem_details)
     db.session.commit()
     db.session.refresh(poem_details)
     return poem_details
@@ -96,15 +96,17 @@ def process_collaborative_poem(poem, poem_details_data, poet_id):
         if last_contribution.poet_id == poet_id:
             return jsonify({'error': 'You cannot contribute consecutive lines. 🦖'}), 400
 
-    # AI validation (skipped for now)
-    content_valid = True  # You can replace this with your AI validation logic.
+    criteria = json.loads(poem_type.criteria)  # Deserialize JSON string to dictionary
+
+    # AI validation
+    validation_result = fetch_poem_validation(poem_details_data.content, criteria)
     
-    if not content_valid:
+    if 'pass' not in validation_result.lower():
         return jsonify({'error': 'Contribution didn\'t pass AI validation. 🌦'}), 400
     
     # Publish the contribution
     poem_details = save_poem_details(poem_details_data)
-    if check_if_collaborative_poem_completed(existing_contributions):
+    if check_if_collaborative_poem_completed(existing_contributions, poem_type.criteria['max_lines']):
         poem.is_published = True
         db.session.commit()
         return jsonify({'message': 'Poem is now completed and published. 🌵'}), 201
