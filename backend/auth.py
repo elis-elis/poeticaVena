@@ -1,7 +1,7 @@
-from flask import Blueprint, request, jsonify
+from flask import Blueprint, request, jsonify, make_response
 from .database import db
 from werkzeug.security import generate_password_hash, check_password_hash
-from flask_jwt_extended import create_access_token, create_refresh_token, jwt_refresh_token_required, get_jwt_identity
+from flask_jwt_extended import create_access_token, create_refresh_token, jwt_required, get_jwt_identity, get_jwt
 from .models import Poet
 from .schemas import PoetCreate, PoetResponse
 from datetime import timedelta
@@ -27,16 +27,30 @@ def login():
     if poet and check_password_hash(poet.password_hash, password):
         access_token = create_access_token(identity=poet.id, expires_delta=timedelta(hours=1))
         refresh_token = create_refresh_token(identity=poet.id)
+
+        # Create a response with the access token in the body
+        response = make_response(jsonify(access_token=access_token, token_type="bearer"), 200)
+
+        # Set the refresh token in an HTTP-only cookie
+        response.set_cookie(
+            'refresh_token',
+            refresh_token,
+            httponly=True,
+            secure=True,
+            samesite='Lax'  # Controls when the cookie is sent
+        )
+
         print(f'Poet(esse) {poet.poet_name} logged in successfully! 🚀')  # Debug statement
-        return jsonify(access_token=access_token, refresh_token=refresh_token, token_type="bearer"), 200
-    
+
+        return response
+
     else:
         print(f'Failed login attempt for {email}')  # Debug statement
         return jsonify({"error": "Invalid email or password. 🪭 "}), 401
 
 
 @auth.route('/refresh', methods=['POST'])
-@jwt_refresh_token_required
+@jwt_required(refresh=True)
 def refresh():
     """
     Generate a new access token using the refresh token.

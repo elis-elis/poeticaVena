@@ -70,4 +70,3 @@ def initialize_poem_types():
             add_poem_type(name, description, json.dumps(criteria))
 
     print('Poem types initialized (if not already present). 🍬')
-    

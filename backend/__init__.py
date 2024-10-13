@@ -18,7 +18,7 @@ def create_app():
 
     jwt = JWTManager(app)
 
-    app.register_blueprint(routes, url_prefix='/routes')
+    app.register_blueprint(routes, url_prefix='/')
     app.register_blueprint(auth, url_prefix='/auth')
 
     create_database(app)

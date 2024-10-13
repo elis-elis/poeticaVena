@@ -1,4 +1,5 @@
-from flask import jsonify, json
+from flask import jsonify
+import json
 from .database import db
 from .models import PoemDetails
 from .schemas import PoemDetailsResponse
@@ -70,7 +71,12 @@ def process_collaborative_poem(poem, poem_details_data, poet_id):
         if last_contribution.poet_id == poet_id:
             return jsonify({'error': 'You cannot contribute consecutive lines. 🦖'}), 400
 
-    criteria = json.loads(poem_type.criteria)  # Deserialize JSON string to dictionary
+    print(f'Poem Type Criteria: {poem_type.criteria}')  # Debug statement
+
+    try:
+        criteria = json.loads(poem_type.criteria)  # Deserialize JSON string to dictionary
+    except json.JSONDecodeError as e:
+        return jsonify({'error': f'Invalid poem criteria format: {str(e)}'}), 500
 
     # AI validation
     validation_result = fetch_poem_validation(poem_details_data.content, criteria, poem.poem_type_id)
@@ -80,7 +86,7 @@ def process_collaborative_poem(poem, poem_details_data, poet_id):
     
     # Publish the contribution
     poem_details = save_poem_details(poem_details_data)
-    if check_if_collaborative_poem_completed(existing_contributions, poem_type.criteria['max_lines']):
+    if check_if_collaborative_poem_completed(existing_contributions, criteria['max_lines']):
         poem.is_published = True
         db.session.commit()
         return jsonify({'message': 'Poem is now completed and published. 🌵'}), 201
