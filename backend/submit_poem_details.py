@@ -73,7 +73,7 @@ def process_collaborative_poem(poem, poem_details_data, poet_id):
     criteria = json.loads(poem_type.criteria)  # Deserialize JSON string to dictionary
 
     # AI validation
-    validation_result = fetch_poem_validation(poem_details_data.content, criteria)
+    validation_result = fetch_poem_validation(poem_details_data.content, criteria, poem.poem_type_id)
     
     if 'pass' not in validation_result.lower():
         return jsonify({'error': 'Contribution didn\'t pass AI validation. 🌦'}), 400

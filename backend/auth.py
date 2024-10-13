@@ -1,7 +1,7 @@
 from flask import Blueprint, request, jsonify
 from .database import db
 from werkzeug.security import generate_password_hash, check_password_hash
-from flask_jwt_extended import create_access_token, create_refresh_token
+from flask_jwt_extended import create_access_token, create_refresh_token, jwt_refresh_token_required, get_jwt_identity
 from .models import Poet
 from .schemas import PoetCreate, PoetResponse
 from datetime import timedelta
@@ -14,8 +14,8 @@ auth = Blueprint('auth', __name__)
 @auth.route('/login', methods=['POST'])
 def login():
     """
-    Poets can log in with their email and password. 
-    If not, appropriate error messages are shown.
+    Handles the authentication of poets by validating email and password. 
+    It generates both an access token and a refresh token using JWT.
     """
     data = request.get_json()   # Get JSON data from request body
     # Extract email and password from the request data
@@ -33,7 +33,21 @@ def login():
     else:
         print(f'Failed login attempt for {email}')  # Debug statement
         return jsonify({"error": "Invalid email or password. 🪭 "}), 401
-    
+
+
+@auth.route('/refresh', methods=['POST'])
+@jwt_refresh_token_required
+def refresh():
+    """
+    Generate a new access token using the refresh token.
+    This will allow poets to use their refresh token to get a new access token 
+    when the previous one has expired, enabling smooth and continuous authentication 
+    without forcing the poet to log in repeatedly.
+    """
+    current_user = get_jwt_identity()   # Get the current poet from the refresh token
+    new_access_token = create_access_token(identity=current_user, expires_delta=timedelta(hours=1))
+    return jsonify(access_token=new_access_token), 200
+
 
 @auth.route('/logout', methods=['POST'])
 def logout():
@@ -46,8 +60,8 @@ def logout():
 @auth.route('/register', methods=['POST'])
 def register():
     """
-    New poets can register for an account after passing validation checks. 
-    Their password is hashed, and account is saved to the database.
+    This function allows new poets to register by validating their details 
+    (like email and password) and storing them in the database after hashing the password.
     """
 
     # Retrieve JSON data from request body
