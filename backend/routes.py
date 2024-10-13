@@ -1,11 +1,17 @@
 from flask import Blueprint, jsonify, request
 from flask_jwt_extended import jwt_required, get_jwt_identity
 from pydantic import ValidationError
-from .models import Poem, PoemType, Poet, PoemDetails
+from .models import Poem, PoemType
 from .database import db
-from .schemas import PoemCreate, PoemTypeResponse, PoemResponse, PoemDetailsCreate, PoemDetailsResponse
-from .submit_poem_details import process_individual_poem, process_collaborative_poem, is_authorized_poet, get_poem_by_id
+from .schemas import PoemCreate, PoemTypeResponse, PoemResponse, PoemDetailsCreate
+from .submit_poem_details import process_individual_poem, process_collaborative_poem, is_authorized_poet
+from .poem_utils import get_poem_by_id
+import logging
+from flask_jwt_extended.exceptions import JWTDecodeError
 
+
+# Configure logging
+logging.basicConfig(level=logging.ERROR)
 
 routes = Blueprint('routes', __name__)
 
@@ -49,10 +55,10 @@ def submit_poem():
         - Creates a new Poem entry in the database if validation passes.
         - Returns a JSON response with the poem details or error message.
     """
-    # Get current logged-in user (poet) ID from JWT token
-    poet_id = get_jwt_identity()
-
     try:
+        # Get current logged-in user (poet) ID from JWT token
+        poet_id = get_jwt_identity()
+
         # Validate incoming JSON data using PoemCreate Pydantic model
         poem_data = PoemCreate(**request.json)
 
@@ -78,6 +84,9 @@ def submit_poem():
         print("Pydantic Model:", poem_response)
 
         return jsonify(poem_response.model_dump()), 201
+
+    except JWTDecodeError:
+        return jsonify({'error': 'Invalid token. Please log in again.'}), 401
 
     except ValidationError as e:
         return jsonify({'errors': e.errors()}), 400
@@ -121,5 +130,6 @@ def submit_poem_details():
         return jsonify({'errors': e.errors()}), 400
 
     except Exception as e:
+        logging.error(f"Error submitting poem: {str(e)}")
         db.session.rollback()
         return jsonify({'error': f'An error occurred: {str(e)}'}), 500

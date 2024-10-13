@@ -1,8 +1,10 @@
 from flask import jsonify, json
 from .database import db
-from .models import Poem, PoemType, PoemDetails
+from .models import PoemDetails
 from .schemas import PoemDetailsResponse
+from .poem_utils import get_poem_type_by_id, get_poem_contributions, get_last_contribution
 from .ai_val import fetch_poem_validation
+
 
 
 def is_authorized_poet(requested_poet_id, authenticated_poet_id):
@@ -10,34 +12,6 @@ def is_authorized_poet(requested_poet_id, authenticated_poet_id):
     Check if the poet is authorized to submit the content.
     """
     return requested_poet_id == authenticated_poet_id
-
-
-def get_poem_by_id(poem_id):
-    """
-    Fetch a poem by its ID from the database.
-    """
-    return Poem.query.get(poem_id)
-
-
-def get_poem_type_by_id(poem_type_id):
-    """
-    Fetch a poem type by its ID from the database.
-    """
-    return PoemType.query.get(poem_type_id)
-
-
-def get_poem_contributions(poem_id):
-    """
-    Count how many contributions exist for a specific poem.
-    """
-    return PoemDetails.query.filter_by(poem_id=poem_id).count()
-
-
-def get_last_contribution(poem_id):
-    """
-    Fetch the most recent contribution to a collaborative poem.
-    """
-    return PoemDetails.query.filter_by(poem_id=poem_id).order_by(PoemDetails.submitted_at.desc()).first()
 
 
 def save_poem_details(poem_details_data):
@@ -50,7 +24,7 @@ def save_poem_details(poem_details_data):
         content=poem_details_data.content
     )
 
-    db.seesion.add(poem_details)
+    db.session.add(poem_details)
     db.session.commit()
     db.session.refresh(poem_details)
     return poem_details

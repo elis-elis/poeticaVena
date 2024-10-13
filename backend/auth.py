@@ -1,7 +1,7 @@
 from flask import Blueprint, request, jsonify
 from .database import db
 from werkzeug.security import generate_password_hash, check_password_hash
-from flask_jwt_extended import create_access_token
+from flask_jwt_extended import create_access_token, create_refresh_token
 from .models import Poet
 from .schemas import PoetCreate, PoetResponse
 from datetime import timedelta
@@ -26,8 +26,9 @@ def login():
     poet = Poet.query.filter_by(email=email).first()
     if poet and check_password_hash(poet.password_hash, password):
         access_token = create_access_token(identity=poet.id, expires_delta=timedelta(hours=1))
+        refresh_token = create_refresh_token(identity=poet.id)
         print(f'Poet(esse) {poet.poet_name} logged in successfully! 🚀')  # Debug statement
-        return jsonify(access_token=access_token, token_type="bearer"), 200
+        return jsonify(access_token=access_token, refresh_token=refresh_token, token_type="bearer"), 200
     
     else:
         print(f'Failed login attempt for {email}')  # Debug statement
