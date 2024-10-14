@@ -83,14 +83,14 @@ def process_collaborative_poem(poem, poem_details_data, poet_id):
         
     # Step 3: Validate poem type criteria format
     try:
-        criteria = poem_type.criteria   # dictionary
+        criteria = poem_type.criteria   # criteria is a dictionary (e.g., syllable count, rhyme scheme)
     except json.JSONDecodeError as e:
         return jsonify({'error': f'Invalid poem criteria format: {str(e)}'}), 500
 
     # Step 4: Perform AI validation
     validation_result = fetch_poem_validation(poem_details_data.content, criteria, poem.poem_type_id)
     
-    # If the contribution doesn't pass AI validation, return an error
+    # If the contribution (or the whole poem so far) doesn't pass AI validation, return an error
     if 'Pass' not in validation_result:
         return jsonify({'error': 'Contribution didn\'t pass AI validation. 🌦'}), 400
     
@@ -103,12 +103,10 @@ def process_collaborative_poem(poem, poem_details_data, poet_id):
         db.session.commit()
         return jsonify({'message': 'Poem is now completed and published. 🌵'}), 201
 
-    # Return the new poem details response
+    # If the poem isn't yet completed, return success and allow more contributions
     poem_details_response = PoemDetailsResponse.model_validate(poem_details)
-    return jsonify(poem_details_response.model_dump()), 201
-
-    # If the poem isn't yet completed, return success but inform that more contributions are needed
     return jsonify({
         'message': 'Contribution accepted and published! Waiting for more contributions to complete the poem. 🌱',
-        'next_step': 'Continue contributing until the poem reaches the required length.'
+        'poem_details': poem_details_response.model_dump(),
+        'next_step': f'{criteria["max_lines"] - (existing_contributions + 1)} line(s) left to complete the poem.'
     }), 201
