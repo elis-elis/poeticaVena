@@ -3,7 +3,7 @@ import json
 from .database import db
 from .models import PoemDetails
 from .schemas import PoemDetailsResponse
-from .poem_utils import get_poem_type_by_id, get_poem_contributions, get_last_contribution
+from .poem_utils import get_poem_type_by_id, get_poem_contributions, get_last_contribution, fetch_all_poem_lines
 from .ai_val import fetch_poem_validation
 
 
@@ -56,37 +56,49 @@ def process_individual_poem(poem, poem_details_data):
 
 def process_collaborative_poem(poem, poem_details_data, poet_id):
     """
-    Handle logic for collaborative poem submissions.
+    Handle logic for collaborative poem submissions
+    where each new contribution builds upon the previous lines.
     """
+    # Step 1: Fetch and validate the poem type
     poem_type = get_poem_type_by_id(poem.poem_type_id)
     if not poem_type:
         return jsonify({'error': 'Poem type was not found. ⚡️'}), 404
 
-    # Check existing contributions
+    # Step 2: Fetch existing contributions
     existing_contributions = get_poem_contributions(poem.id)
+
+    # If no existing contributions, this is the first contribution
     if existing_contributions == 0:
         print(f'First contribution to collaborative poem by poet(esse) ID {poet_id}.')
+        current_poem_content = poem_details_data.content
     else:
+        # Get the most recent contribution to check for consecutive contributions by the same poet
         last_contribution = get_last_contribution(poem.id)
         if last_contribution.poet_id == poet_id:
             return jsonify({'error': 'You cannot contribute consecutive lines. 🦖'}), 400
-
-    print(f'Poem Type Criteria: {poem_type.criteria}')  # Debug statement
-
+        
+        # Combine all previous lines of the poem into a single string (for validation as a whole)
+        previous_lines = fetch_all_poem_lines(poem.id)
+        current_poem_content = previous_lines + "\n" + poem_details_data.content
+        
+    # Step 3: Validate poem type criteria format
     try:
         criteria = poem_type.criteria   # dictionary
     except json.JSONDecodeError as e:
         return jsonify({'error': f'Invalid poem criteria format: {str(e)}'}), 500
 
-    # AI validation
+    # Step 4: Perform AI validation
     validation_result = fetch_poem_validation(poem_details_data.content, criteria, poem.poem_type_id)
     
-    if 'pass' not in validation_result.lower():
+    # If the contribution doesn't pass AI validation, return an error
+    if 'Pass' not in validation_result:
         return jsonify({'error': 'Contribution didn\'t pass AI validation. 🌦'}), 400
     
-    # Publish the contribution
+    # Step 5: Save the contribution (publish it) after passing validation
     poem_details = save_poem_details(poem_details_data)
-    if check_if_collaborative_poem_completed(existing_contributions, criteria['max_lines']):
+
+    # Step 6: Check if the poem is now complete (i.e., number of contributions matches max_lines in criteria)
+    if check_if_collaborative_poem_completed(existing_contributions + 1, criteria['max_lines']):
         poem.is_published = True
         db.session.commit()
         return jsonify({'message': 'Poem is now completed and published. 🌵'}), 201
@@ -94,3 +106,9 @@ def process_collaborative_poem(poem, poem_details_data, poet_id):
     # Return the new poem details response
     poem_details_response = PoemDetailsResponse.model_validate(poem_details)
     return jsonify(poem_details_response.model_dump()), 201
+
+    # If the poem isn't yet completed, return success but inform that more contributions are needed
+    return jsonify({
+        'message': 'Contribution accepted and published! Waiting for more contributions to complete the poem. 🌱',
+        'next_step': 'Continue contributing until the poem reaches the required length.'
+    }), 201

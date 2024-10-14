@@ -16,26 +16,22 @@ def fetch_poem_validation(poem_line, criteria, poem_type_id):
     """
     # Get the poem type with its criteria
     poem_type = get_poem_type_by_id(poem_type_id)
-    context = {'rhyme_scheme': 'AABBA', 'syllable_structure': None}
     if not poem_type:
         return "Error: Poem type not found."
 
     # Construct a prompt based on the poem type's criteria
-    # prompt = f"Please check if this line follows the criteria: {poem_line}. Be very concise and specific with your answer. Respond with either 'Pass' or 'Fail'.\n"
-    prompt = f"""Given the following criteria for Limerick poem:
-    {context}
-
-    And the Poem with the following line(s):
+    prompt = f""" Given the following criteria {criteria} for a poem:
+    and the Poem with the following line(s):
     {poem_line}
-    Please check if the Poem meets the given criteria. 
-    Limerick requires 5 lines but please ignore this requirements for now since this is a work in progress.
-    Ignore validation if a line introduces a new rhyme. Respond with either 'Pass' or 'Fail', with a concise explanation when it fails."""
+    Please check if the Poem meets the given criteria.
+    consider that it is work in progress and so each line should be checked separately by syllable count and not by lines count. if syllable structure is 5-7-5 and the first line has 5 syllables it means the line should pass validation.
+    Respond with either 'Pass' or 'Fail', with a concise explanation when it fails."""
 
-    # if 'syllable_structure' in criteria and criteria['syllable_structure']:
-        # prompt += f"Syllable structure: {criteria['syllable_structure']}.\n"
+    if 'syllable_structure' in criteria and criteria['syllable_structure']:
+        prompt += f"Syllable structure: {criteria['syllable_structure']}.\n"
 
-    # if 'rhyme_scheme' in criteria and criteria['rhyme_scheme']:
-        # prompt += f"Rhyme scheme: {criteria['rhyme_scheme']}.\n"
+    if 'rhyme_scheme' in criteria and criteria['rhyme_scheme']:
+        prompt += f"Rhyme scheme: {criteria['rhyme_scheme']}.\n"
 
     messages = [
         {
@@ -46,15 +42,23 @@ def fetch_poem_validation(poem_line, criteria, poem_type_id):
 
     try:
         # Make the call to the GPT model
-        response = client.chat.completions.create(model="gpt-3.5-turbo",
-        messages=messages)
+        response = client.chat.completions.create(
+            model="gpt-3.5-turbo",
+            messages=messages
+        )
 
-        # Extract the assistant's reply from the response
-        print(response)
-        reply = response
+        # Print the response structure
+        print(f"Full response: {response}")
+        print(f"Response type: {type(response)}")
 
-        return reply.strip()
+        choices = response.choices
+        if choices and len(choices) > 0:
+            message = choices[0].message.content.strip()
+            print(f"Reply from GPT: {message}")  # Now print the extracted message
+            return message
+        else:
+            print("Error: 'choices' missing or empty in response.")
+            return "Error: No choices in response."
 
     except Exception as e:
-        print(e)
         return f"Error: {str(e)}"
