@@ -74,7 +74,7 @@ def process_collaborative_poem(poem, poem_details_data, poet_id):
     print(f'Poem Type Criteria: {poem_type.criteria}')  # Debug statement
 
     try:
-        criteria = json.loads(poem_type.criteria)  # Deserialize JSON string to dictionary
+        criteria = poem_type.criteria   # dictionary
     except json.JSONDecodeError as e:
         return jsonify({'error': f'Invalid poem criteria format: {str(e)}'}), 500
 

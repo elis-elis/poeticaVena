@@ -12,11 +12,15 @@ def add_poem_type(name, description, criteria):
     from .models import PoemType    # Import model only when needed to avoid circular imports
     
     try:
+        # Convert criteria to a JSON string if it's not already one
+        if isinstance(criteria, dict):
+            criteria = json.dumps(criteria)
+
         # Create a new PoemType instance
         new_poem_type = PoemType(
             name=name,
             description=description,
-            criteria=criteria
+            criteria=criteria   # Store as JSON string
         )
 
         db.session.add(new_poem_type)
@@ -65,8 +69,9 @@ def initialize_poem_types():
     ]
 
     for name, description, criteria in poem_types:
+        # Check if the poem type already exists
         if not PoemType.query.filter_by(name=name).first():
             # Save criteria as JSON string in the database
-            add_poem_type(name, description, json.dumps(criteria))
+            add_poem_type(name, description, criteria)
 
     print('Poem types initialized (if not already present). 🍬')
