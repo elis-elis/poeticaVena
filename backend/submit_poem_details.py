@@ -67,9 +67,12 @@ def process_collaborative_poem(poem, poem_details_data, poet_id):
     # Step 2: Fetch existing contributions
     existing_contributions = get_poem_contributions(poem.id)
 
+    current_poem_content = poem_details_data.content
+
     # If no existing contributions, this is the first contribution
     if existing_contributions == 0:
         print(f'First contribution to collaborative poem by poet(esse) ID {poet_id}.')
+        print(f"Existing Contributions: {existing_contributions}, Criteria: {criteria}")
         current_poem_content = poem_details_data.content
     else:
         # Get the most recent contribution to check for consecutive contributions by the same poet
@@ -87,12 +90,15 @@ def process_collaborative_poem(poem, poem_details_data, poet_id):
     except json.JSONDecodeError as e:
         return jsonify({'error': f'Invalid poem criteria format: {str(e)}'}), 500
 
-    # Step 4: Perform AI validation
-    validation_result = fetch_poem_validation(poem_details_data.content, criteria, poem.poem_type_id)
+    # Step 4: Perform AI validation, include all current contributions
+    # If there are existing contributions, fetch them
+    all_lines = fetch_all_poem_lines(poem.id) + current_poem_content
+
+    validation_result = fetch_poem_validation(all_lines, criteria, poem.poem_type_id)
     
     # If the contribution (or the whole poem so far) doesn't pass AI validation, return an error
     if 'Pass' not in validation_result:
-        return jsonify({'error': 'Contribution didn\'t pass AI validation. 🌦'}), 400
+        return jsonify({'error': 'Contribution didn\'t pass AI validation. Try again. 🌦'}), 400
     
     # Step 5: Save the contribution (publish it) after passing validation
     poem_details = save_poem_details(poem_details_data)

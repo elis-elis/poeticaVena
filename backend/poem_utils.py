@@ -19,7 +19,7 @@ def get_poem_contributions(poem_id):
     """
     Count how many contributions exist for a specific poem.
     """
-    return PoemDetails.query.filter_by(poem_id=poem_id).count()
+    return PoemDetails.query.filter_by(poem_id=poem_id).count() or 0
 
 
 def get_last_contribution(poem_id):
@@ -47,3 +47,4 @@ def fetch_all_poem_lines(poem_id):
     for detail in poem_lines:
         all_lines += detail.content + '\n'
         
+    return all_lines
