@@ -3,7 +3,9 @@ from .models import Poem, PoemType, PoemDetails
 
 
 def count_syllables(line):
-    """Count the number of syllables in a given line of poetry."""
+    """
+    Count the number of syllables in a given line of poetry.
+    """
     line = line.lower()
     # Basic syllable counting using regex
     syllable_count = len(re.findall(r'[aeiouy]{1,2}', line))    # Count vowel clusters

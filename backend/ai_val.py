@@ -1,6 +1,9 @@
 import os
-from flask import json
 from openai import OpenAI
+from .poem_utils import count_syllables
+import logging
+
+logging.basicConfig(level=logging.DEBUG, format='%(asctime)s - %(levelname)s - %(message)s')
 
 client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 from dotenv import load_dotenv
@@ -19,19 +22,23 @@ def fetch_poem_validation(poem_line, criteria, poem_type_id):
     if not poem_type:
         return "Error: Poem type not found."
 
+    syllable_count = count_syllables(poem_line)
+    logging.debug(f"Syllable count for '{poem_line}': {syllable_count}")
+
     # Construct a prompt based on the poem type's criteria
-    prompt = f""" Given the following criteria {criteria} for a poem:
-    and the Poem with the following line(s):
+    prompt = f"""
+    You are an expert poetry validator. Given the following criteria: {criteria} for a poem,
+    and the following line of the poem:
     {poem_line}
-    Please check if the Poem meets the given criteria.
-    consider that it is work in progress and so each line should be checked separately by syllable count and not by lines count. if syllable structure is 5-7-5 and the first line has 5 syllables it means the line should pass validation.
-    Respond with either 'Pass' or 'Fail', with a concise explanation when it fails."""
-
-    if 'syllable_structure' in criteria and criteria['syllable_structure']:
-        prompt += f"Syllable structure: {criteria['syllable_structure']}.\n"
-
-    if 'rhyme_scheme' in criteria and criteria['rhyme_scheme']:
-        prompt += f"Rhyme scheme: {criteria['rhyme_scheme']}.\n"
+    Please validate the line against the syllable structure.
+    - If the poem follows the required syllable structure of 5-7-5, where:
+    - The first line must have 5 syllables,
+    - The second line must have 7 syllables,
+    - The third line must have 5 syllables,
+    Then respond with 'Pass'. 
+    - If the line does not meet the criteria, respond with 'Fail' and provide a concise explanation, specifically noting which line failed and why.
+    Focus on this line only and confirm whether it meets the syllable count requirement as specified in the criteria.
+    """
 
     messages = [
         {
@@ -47,18 +54,18 @@ def fetch_poem_validation(poem_line, criteria, poem_type_id):
             messages=messages
         )
 
-        # Print the response structure
-        print(f"Full response: {response}")
-        print(f"Response type: {type(response)}")
+        # Log the response for debugging
+        logging.debug(f"Full response: {response}")
 
         choices = response.choices
         if choices and len(choices) > 0:
             message = choices[0].message.content.strip()
-            print(f"Reply from GPT: {message}")  # Now print the extracted message
+            logging.debug(f"Validating line: '{poem_line}' with criteria: {criteria}")
             return message
         else:
-            print("Error: 'choices' missing or empty in response.")
+            logging.error("Error: 'choices' missing or empty in response.")
             return "Error: No choices in response."
 
     except Exception as e:
+        logging.error(f"Error: {str(e)}")
         return f"Error: {str(e)}"
