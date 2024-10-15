@@ -1,3 +1,8 @@
+"""
+This file handles the overall submission process for individual and collaborative poems.
+
+"""
+
 from flask import jsonify
 from .database import db
 from .models import PoemDetails
@@ -57,6 +62,16 @@ def process_individual_poem(poem, poem_details_data):
 def process_collaborative_poem(poem, poem_details_data, poet_id):
     """
     Handle logic for collaborative poem submissions.
+    This function performs a series of validation steps before saving the poem.
+        - Calls validate_max_lines() from poem_val.py.
+        - Calls validate_consecutive_contributions() to ensure the same poet isn’t contributing consecutively.
+        - Fetching the poem type criteria (e.g., max lines, rhyme scheme) from the database.
+        The criteria must be present and valid; otherwise, the process stops.
+        - Calls validate_poem_content() from poem_val.py.
+        The previous lines are passed along with the current contribution for types 
+        like Haiku and Nonet that require full-context validation.
+    If all validation passes, the contribution is saved.
+    It checks if the poem is complete and marks it as published if the maximum number of lines is reached.
     """
     # Step 1: Fetch and validate the poem type
     poem_type = get_poem_type_by_id(poem.poem_type_id)
@@ -72,6 +87,7 @@ def process_collaborative_poem(poem, poem_details_data, poet_id):
     current_poem_content = poem_details_data.content
 
     # Step 4: Validate max lines
+    # If the validation returns a tuple (i.e., error message), it returns the tuple and stops further processing.
     max_lines = validate_max_lines(poem_type, existing_contributions)
     if isinstance(max_lines, tuple):
         return max_lines
@@ -86,12 +102,13 @@ def process_collaborative_poem(poem, poem_details_data, poet_id):
         
     # Step 6: Validate poem type criteria format
     criteria = poem_type.criteria   # criteria is a dictionary (e.g., syllable count, rhyme scheme)
-    if criteria is None:
-        return jsonify({'error': 'Poem type criteria missing. ⚡️'}), 500
+    if not criteria or 'max_lines' not in criteria:
+        return jsonify({'error': 'Poem type criteria missing or invalid. ⚡️'}), 500
 
     # Step 7: Validate the current contribution based on the poem type
     # validation_result = fetch_poem_validation(current_poem_content, criteria, poem.poem_type_id)
-    validation_error = validate_poem_content(poem_type, current_poem_content)
+    # Only validate the new contribution (current_poem_content) but pass previous_lines for context
+    validation_error = validate_poem_content(poem_type, current_poem_content, previous_lines)
     if validation_error:
         return validation_error
     
