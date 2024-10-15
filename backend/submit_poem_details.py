@@ -64,15 +64,25 @@ def process_collaborative_poem(poem, poem_details_data, poet_id):
     if not poem_type:
         return jsonify({'error': 'Poem type was not found. ⚡️'}), 404
 
-    # Step 2: Fetch existing contributions
-    existing_contributions = get_poem_contributions(poem.id)
+    # Step 2: Check if the poem is already completed (published)
+    if poem.is_published:
+        return jsonify({'error': 'The poem is already completed and no more contributions can be made. 🌻'}), 400
 
+    # Step 3: Fetch existing contributions
+    existing_contributions = get_poem_contributions(poem.id)
     current_poem_content = poem_details_data.content
 
+    # Step 4: Check if adding the new contribution would exceed the maximum lines allowed
+    max_lines = poem_type.criteria.get('max_lines', None)
+    if max_lines is None:
+        return jsonify({'error': 'Poem type criteria missing max_lines definition. ⚡️'}), 500
+
     # If no existing contributions, this is the first contribution
-    if existing_contributions == 0:
-        print(f'First contribution to collaborative poem by poet(esse) ID {poet_id}.')
-    else:
+    if existing_contributions + 1 > max_lines:
+        return jsonify({'error': f'This poem has already reached the maximum number of {max_lines} lines. 🌿'}), 400
+    
+    # Step 5: Check for consecutive contributions by the same poet
+    if existing_contributions > 0:
         # Get the most recent contribution to check for consecutive contributions by the same poet
         last_contribution = get_last_contribution(poem.id)
         if last_contribution.poet_id == poet_id:
@@ -81,26 +91,26 @@ def process_collaborative_poem(poem, poem_details_data, poet_id):
         # Combine all previous lines (for presentation purposes, not validation)
         previous_lines = fetch_all_poem_lines(poem.id)
         
-    # Step 3: Validate poem type criteria format
+    # Step 6: Validate poem type criteria format
     try:
         criteria = poem_type.criteria   # criteria is a dictionary (e.g., syllable count, rhyme scheme)
     except json.JSONDecodeError as e:
         return jsonify({'error': f'Invalid poem criteria format: {str(e)}'}), 500
 
-    # Step 4: Perform AI validation on the current line only
+    # Step 7: Perform AI validation on the current line only
     validation_result = fetch_poem_validation(current_poem_content, criteria, poem.poem_type_id)
     
     # If the contribution (or the whole poem so far) doesn't pass AI validation, return an error
     if 'Pass' not in validation_result:
-        return jsonify({'error': 'Contribution didn\'t pass AI validation. Try again. 🌦'}), 400
+        return jsonify({'error': 'Contribution didn\'t pass AI validation. Try again, dear poet(esse). 🌦'}), 400
     
-    # Step 5: Save the contribution (publish it) after passing validation
+    # Step 8: Save the contribution (publish it) after passing validation
     poem_details = save_poem_details(poem_details_data)
 
-    # Step 6: Prepare the full poem so far, including all previous contributions and the new one
+    # Step 9: Prepare the full poem so far, including all previous contributions and the new one
     full_poem_so_far = previous_lines + "\n" + current_poem_content if existing_contributions > 0 else current_poem_content
 
-    # Step 7: Check if the poem is now complete (i.e., number of contributions matches max_lines in criteria)
+    # Step 10: Check if the poem is now complete (i.e., number of contributions matches max_lines in criteria)
     if check_if_collaborative_poem_completed(existing_contributions + 1, criteria['max_lines']):
         poem.is_published = True
         db.session.commit()
