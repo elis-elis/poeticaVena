@@ -1,8 +1,5 @@
 import re
 from .models import Poem, PoemType, PoemDetails
-from poetry_validators.haiku import validate_haiku
-from poetry_validators.nonet import validate_nonet
-from poetry_validators.free_verse import validate_free_verse
 
 
 def count_syllables(line):
@@ -13,25 +10,6 @@ def count_syllables(line):
     # Basic syllable counting using regex
     syllable_count = len(re.findall(r'[aeiouy]{1,2}', line))    # Count vowel clusters
     return syllable_count
-
-
-def validate_poem_content(poem_type, current_poem_content, previous_lines):
-    """
-    Validate the current contribution based on the poem type.
-    :param poem_type: The type of poem (e.g., Haiku, Nonet, etc.).
-    :param current_poem_content: The line being contributed by the poet.
-    :param previous_lines: The previous contributions from other poets.
-    :return: JSON response if there is a validation error, or None if validation passed.
-    """
-    if poem_type.name == 'Haiku':
-        return validate_haiku(current_poem_content, previous_lines)
-    elif poem_type.name == 'Nonet':
-        return validate_nonet(current_poem_content, previous_lines)
-    elif poem_type.name == 'Free Verse':
-        return validate_free_verse()
-
-    # Add other poem types here as needed
-    return None
 
 
 def get_poem_type_by_id(poem_type_id):
@@ -81,3 +59,13 @@ def fetch_all_poem_lines(poem_id):
         all_lines += detail.content + '\n'
         
     return all_lines
+
+
+def prepare_full_poem(existing_contributions, current_poem_content, poem_id):
+    """
+    Prepare the full poem so far including all previous contributions and the new one.
+    """
+    if existing_contributions > 0:
+        previous_lines = fetch_all_poem_lines(poem_id)
+        return previous_lines + "\n" + current_poem_content
+    return current_poem_content
