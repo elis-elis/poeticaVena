@@ -86,67 +86,51 @@ def process_collaborative_poem(poem, poem_details_data, poet_id):
     existing_contributions = get_poem_contributions(poem.id)
     current_poem_content = poem_details_data.content
 
+    # Step 4: Handle specific logic for different poem types
     if poem_type.name == "Free Verse":
-        poem_details = save_poem_details(poem_details_data)
-        poem_details_response = PoemDetailsResponse.model_validate(poem_details)
-        full_poem_so_far = prepare_full_poem(existing_contributions, current_poem_content, poem.id)
-        return jsonify({
-            'message': 'Contribution accepted and published! Waiting for more contributions to complete the poem. 🌱',
-            'poem_details': poem_details_response.model_dump(),
-            'full_poem': full_poem_so_far,  # Display the entire poem including the new contribution
-            'next_step': 'continue writing until you die.'
-        }), 201
-    #elif poem_type == "Haiku":
-        
+        return handle_free_verse(existing_contributions, current_poem_content, poem, poem_details_data)
+    elif poem_type.name == "Haiku":
+        return handle_haiku(existing_contributions, current_poem_content, poem, poem_details_data, poet_id)
     
+    # Step 5: Common validation for all poem types (max lines, contributions, etc.)
+    return validate_and_save_poem(poem_type, existing_contributions, current_poem_content, poem, poem_details_data, poet_id)
 
+
+def validate_and_save_poem(poem_type, existing_contributions, current_poem_content, poem, poem_details_data, poet_id):
+    """
+    Common validation logic for all poem types, including max lines and contribution rules.
+    """
     # Step 4: Validate max lines
-    # If the validation returns a tuple (i.e., error message), it returns the tuple and stops further processing.
-    max_lines = validate_max_lines(poem_type, existing_contributions)
-    if isinstance(max_lines, tuple):
-        return max_lines
-    
+    max_lines_error = validate_max_lines(poem_type, existing_contributions)
+    if max_lines_error:
+        return max_lines_error
+
     # Step 5: Check for consecutive contributions by the same poet
     consecutive_error = validate_consecutive_contributions(existing_contributions, poet_id, poem.id)
     if consecutive_error:
         return consecutive_error
-        
-    # Combine all previous lines (for presentation purposes, not validation)
-    previous_lines = fetch_all_poem_lines(poem.id)
-        
-    # Step 6: Validate poem type criteria format
-    criteria = poem_type.criteria   # criteria is a dictionary (e.g., syllable count, rhyme scheme)
-    if not criteria or 'max_lines' not in criteria:
-        return jsonify({'error': 'Poem type criteria missing or invalid. ⚡️'}), 500
 
-    # Step 7: Validate the current contribution based on the poem type
-    # validation_result = fetch_poem_validation(current_poem_content, criteria, poem.poem_type_id)
-    # Only validate the new contribution (current_poem_content) but pass previous_lines for context
+    # Step 6: Validate the poem content based on poem type criteria
+    previous_lines = fetch_all_poem_lines(poem.id)
     validation_error = validate_poem_content(poem_type, current_poem_content, previous_lines)
     if validation_error:
         return validation_error
-    
-    # If the contribution (or the whole poem so far) doesn't pass AI validation, return an error
-    # if 'Pass' not in validation_result:
-        # return jsonify({'error': 'Contribution didn\'t pass AI validation. Try again, dear poet(esse). 🌦'}), 400
-    
-    # Step 8: Save the contribution (publish it) after passing validation
-    poem_details = save_poem_details(poem_details_data)
 
-    # Step 9: Prepare the full poem so far
+    # Step 7: Save the contribution and prepare the full poem
+    poem_details = save_poem_details(poem_details_data)
     full_poem_so_far = prepare_full_poem(existing_contributions, current_poem_content, poem.id)
 
-    # Step 10: Check if the poem is now complete (i.e., number of contributions matches max_lines in criteria)
-    if check_if_collaborative_poem_completed(existing_contributions + 1, criteria['max_lines']):
+    # Step 8: Check if the poem is now complete (i.e., max lines reached)
+    if check_if_collaborative_poem_completed(existing_contributions + 1, poem_type.criteria['max_lines']):
         poem.is_published = True
         db.session.commit()
         return jsonify({'message': 'Poem is now completed and published. 🌵'}), 201
 
-    # Return the poem details along with the full poem so far
+    # Return poem details and next steps
     poem_details_response = PoemDetailsResponse.model_validate(poem_details)
     return jsonify({
-        'message': 'Contribution accepted and published! Waiting for more contributions to complete the poem. 🌱',
+        'message': 'Contribution accepted and published! 🌱',
         'poem_details': poem_details_response.model_dump(),
-        'full_poem': full_poem_so_far,  # Display the entire poem including the new contribution
-        'next_step': f'{criteria["max_lines"] - (existing_contributions + 1)} line(s) left to complete the poem.'
+        'full_poem': full_poem_so_far,
+        'next_step': f'{poem_type.criteria["max_lines"] - (existing_contributions + 1)} line(s) left to complete the poem.'
     }), 201
