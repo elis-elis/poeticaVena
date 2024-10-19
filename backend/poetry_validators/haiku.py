@@ -1,10 +1,8 @@
 from backend.database import db
 from flask import jsonify
 from backend.poem_utils import count_syllables, fetch_all_poem_lines
-from backend.submit_poem_details import save_poem_details
 from backend.poem_utils import prepare_full_poem
 from backend.schemas import PoemDetailsResponse
-
 
 
 def validate_haiku(current_poem_content, previous_lines):
@@ -35,6 +33,8 @@ def handle_haiku(existing_contributions, current_poem_content, poem, poem_detail
     """
     Handle contributions for Haiku poems, ensuring the syllable structure is maintained.
     """
+    from backend.submit_poem_details import save_poem_details
+
     # Combine all previous lines (for presentation purposes, not validation)
     previous_lines = fetch_all_poem_lines(poem.id)
 

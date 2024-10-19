@@ -25,7 +25,6 @@ def validate_syllables(current_poem_content, existing_lines, expected_structure)
         return jsonify({'error': f'This poem can have a maximum of {len(expected_structure)} lines.'}), 400
 
     # Check each line for syllable count
-    # syllable_counts = [count_syllables(line) for line in lines]
     syllable_counts = []  # Initialize an empty list to store the syllable counts for each line
 
     for line in lines:
