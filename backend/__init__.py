@@ -4,6 +4,7 @@ from flask_jwt_extended import JWTManager, jwt_required, get_jwt_identity
 from config import Config
 from .database import db, create_database
 from .data_utils import initialize_poem_types
+from backend.data_utils import delete_poem_type_by_name, initialize_poem_types, delete_unnecessary_poem_type
 
 
 def create_app():
@@ -30,7 +31,7 @@ def create_app():
 
     create_database(app)
 
-    with app.app_context():
+    with app.app_context():  # Ensure it is within the application context for database operations
         initialize_poem_types()
     
     @app.route('/protected', methods=['GET'])

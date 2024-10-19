@@ -66,6 +66,6 @@ def prepare_full_poem(existing_contributions, current_poem_content, poem_id):
     Prepare the full poem so far including all previous contributions and the new one.
     """
     if existing_contributions > 0:
-        previous_lines = fetch_all_poem_lines(poem_id)
-        return previous_lines + "\n" + current_poem_content
+        # Fetch and return all lines without appending the current content
+        return fetch_all_poem_lines(poem_id)
     return current_poem_content

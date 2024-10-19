@@ -1,5 +1,5 @@
 from flask import jsonify
-from poem_utils import count_syllables
+from backend.poem_utils import count_syllables
 
 def validate_haiku(current_poem_content, previous_lines):
     """

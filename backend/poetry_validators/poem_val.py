@@ -4,10 +4,10 @@ The poem_val.py file handles the validation logic for different poem types.
 """
 
 from flask import jsonify
-from poetry_validators.haiku import validate_haiku
-from poetry_validators.nonet import validate_nonet
-from poetry_validators.free_verse import validate_free_verse
-from poem_utils import get_last_contribution
+from .haiku import validate_haiku
+from .nonet import validate_nonet
+from .free_verse import validate_free_verse
+from backend.poem_utils import get_last_contribution
 
 
 
@@ -20,7 +20,7 @@ def validate_poem_content(poem_type, current_poem_content, previous_lines):
     elif poem_type.name == 'Nonet':
         return validate_nonet(current_poem_content, previous_lines)
     elif poem_type.name == 'Free Verse':
-        return None
+        return validate_free_verse(current_poem_content)
 
     # Add other poem types here as needed
 

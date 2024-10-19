@@ -59,12 +59,12 @@ def initialize_poem_types():
             'syllable_structure': '9-8-7-6-5-4-3-2-1',
             'rhyme_scheme': None
         }),
-        ('Limerick',
-        'A five line poem with a rhyming pattern of AABBA. It usually tells the tale of someone doing something or something happening to them. It is usually written in a humorous way, and the third and fourth lines are usually shorter than the first, second and fith.',
+        ('Free Verse',
+        'A poem that does not follow any specific meter, rhyme scheme, or structure. It allows for complete freedom of expression.',
         {
-            'max_lines': 5,
-            'syllable_structure': None,
-            'rhyme_scheme': 'AABBA'
+            'max_lines': None,  # No limit on lines
+            'syllable_structure': None,  # No syllable restrictions
+            'rhyme_scheme': None  # No rhyme scheme
         }),
     ]
 
@@ -75,3 +75,48 @@ def initialize_poem_types():
             add_poem_type(name, description, criteria)
 
     print('Poem types initialized (if not already present). 🍬')
+
+
+def delete_poem_type_by_name(name):
+    from .models import PoemType, Poem
+    # Fetch the poem type to delete
+    poem_type = PoemType.query.filter_by(name=name).first()
+
+    if poem_type:
+        # Fetch poems associated with this poem_type (e.g., Limerick)
+        poems_with_this_type = Poem.query.filter_by(poem_type_id=poem_type.id).all()
+
+        if poems_with_this_type:
+            # Find the "Free Verse" type
+            free_verse_type = PoemType.query.filter_by(name='Free Verse').first()
+
+            if not free_verse_type:
+                print(f"'Free Verse' poem type not found! Please create 'Free Verse' first.")
+                return False
+
+            # Reassign all poems to "Free Verse"
+            for poem in poems_with_this_type:
+                poem.poem_type_id = free_verse_type.id
+
+        # Now, it's safe to delete the "Limerick" poem type
+        db.session.delete(poem_type)
+        db.session.commit()
+
+        print(f"Poem type '{name}' has been deleted and poems reassigned to 'Free Verse'. 🍂")
+    else:
+        print(f"Poem type '{name}' not found. 🚫")
+
+
+def delete_unnecessary_poem_type(name):
+    """
+    Utility function to delete an unnecessary poem type like 'Unspecified' if it was created by mistake.
+    """
+    from .models import PoemType
+    poem_type = PoemType.query.filter_by(name=name).first()
+
+    if poem_type:
+        db.session.delete(poem_type)
+        db.session.commit()
+        print(f"Poem type '{name}' has been deleted. 🗑️")
+    else:
+        print(f"Poem type '{name}' not found. 🚫")

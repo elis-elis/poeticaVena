@@ -8,8 +8,8 @@ from .database import db
 from .models import PoemDetails
 from .schemas import PoemDetailsResponse
 from .poem_utils import get_poem_type_by_id, get_poem_contributions, get_last_contribution, fetch_all_poem_lines
-from poetry_validators.poem_val import validate_max_lines, validate_consecutive_contributions, validate_poem_content
-from poem_utils import prepare_full_poem
+from .poetry_validators.poem_val import validate_max_lines, validate_consecutive_contributions, validate_poem_content
+from .poem_utils import prepare_full_poem
 
 
 
@@ -85,6 +85,20 @@ def process_collaborative_poem(poem, poem_details_data, poet_id):
     # Step 3: Fetch existing contributions
     existing_contributions = get_poem_contributions(poem.id)
     current_poem_content = poem_details_data.content
+
+    if poem_type.name == "Free Verse":
+        poem_details = save_poem_details(poem_details_data)
+        poem_details_response = PoemDetailsResponse.model_validate(poem_details)
+        full_poem_so_far = prepare_full_poem(existing_contributions, current_poem_content, poem.id)
+        return jsonify({
+            'message': 'Contribution accepted and published! Waiting for more contributions to complete the poem. 🌱',
+            'poem_details': poem_details_response.model_dump(),
+            'full_poem': full_poem_so_far,  # Display the entire poem including the new contribution
+            'next_step': 'continue writing until you die.'
+        }), 201
+    #elif poem_type == "Haiku":
+        
+    
 
     # Step 4: Validate max lines
     # If the validation returns a tuple (i.e., error message), it returns the tuple and stops further processing.
