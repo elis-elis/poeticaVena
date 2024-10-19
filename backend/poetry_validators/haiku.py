@@ -1,6 +1,6 @@
 from backend.database import db
 from flask import jsonify
-from backend.poem_utils import count_syllables, fetch_all_poem_lines
+from backend.poem_utils import fetch_all_poem_lines
 from backend.poem_utils import prepare_full_poem
 from backend.schemas import PoemDetailsResponse
 
@@ -10,19 +10,29 @@ def validate_haiku(current_poem_content, previous_lines):
     Validate the current contribution for Haiku.
     Only the new line (current_poem_content) is validated, but previous lines provide context.
     """
+    from backend.poem_utils import count_syllables_in_line
+
     # Combine previous and current lines to get the full Haiku structure so far
-    combined_lines = previous_lines.strip().split("\n") + [current_poem_content.strip()]
+    # Filter out empty lines from previous_lines to avoid adding an empty line
+    combined_lines = [line for line in previous_lines.strip().split("\n") if line] + [current_poem_content.strip()]
+
+    # Print combined lines for debugging
+    print(f"Combined lines: {combined_lines}")
     
     # Haiku must have exactly 3 lines, but each poet adds one line at a time
     if len(combined_lines) > 3:
         return jsonify({'error': 'Haiku can only have 3 lines in total. ⚡️'}), 400
     
     # Check if the current line violates the Haiku syllable structure
-    syllable_counts = [count_syllables(line) for line in combined_lines]
+    syllable_counts = [count_syllables_in_line(line) for line in combined_lines]
+
+    # Print syllable counts for debugging
+    print(f"Syllable counts: {syllable_counts}")
     
     # For Haiku, check if syllable counts match the expected 5-7-5 structure
     expected_structure = [5, 7, 5]
     for i, syllables in enumerate(syllable_counts):
+        print(f"Line {i+1} syllables: {syllables}, expected: {expected_structure[i]}")
         if i < len(expected_structure) and syllables != expected_structure[i]:
             return jsonify({'error': f'Line {i+1} does not follow the required syllable count ({expected_structure[i]} syllables). 🌦'}), 400
 

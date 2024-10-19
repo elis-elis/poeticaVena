@@ -5,6 +5,24 @@ The poem_val.py file handles the validation logic for different poem types.
 from flask import jsonify
 from backend.poem_utils import get_last_contribution
 
+def validate_poem_content(poem_type, current_poem_content, previous_lines):
+    """
+    Route to the correct poem content validation based on poem type.
+    """
+    from .haiku import validate_haiku
+    from .free_verse import validate_free_verse
+    from .nonet import validate_nonet
+
+    if poem_type.name == 'Haiku':
+        return validate_haiku(current_poem_content, previous_lines)
+    elif poem_type.name == 'Nonet':
+        return validate_nonet(current_poem_content, previous_lines)  # Assuming you add Nonet handling
+    elif poem_type.name == 'Free Verse':
+        return validate_free_verse(current_poem_content)
+
+    # Add other poem types here as needed
+    return None  # No validation needed for certain types
+
 
 def validate_max_lines(poem_type, existing_contributions):
     """
