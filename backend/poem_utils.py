@@ -3,6 +3,38 @@ Retains database fetching functions.
 """
 
 from .models import Poem, PoemType, PoemDetails
+import nltk
+from nltk.corpus import cmudict
+import re
+
+# Load the CMU Pronouncing Dictionary
+nltk.download('cmudict')
+d = cmudict.dict()
+
+
+def nltk_syllable_count(word):
+    """
+    Uses the CMU Pronouncing Dictionary to count syllables in a word.
+    If the word is not found, a regex-based estimate is returned.
+    """
+    word = word.lower()
+    
+    if word in d:
+        # If the word is found, get syllable count from the first pronunciation in the dictionary
+        return max([len([syl for syl in pronunciation if syl[-1].isdigit()]) for pronunciation in d[word]])
+    else:
+        # If word not found in CMU dictionary, fallback to rough syllable count using regex.
+        # This counts vowels and assumes one vowel = one syllable.
+        return len(re.findall(r'[aeiouy]+', word.lower()))
+    
+
+def count_syllables_in_line(line):
+    """
+    Count syllables in an entire line by splitting it into words and counting syllables in each word.
+    """
+    words = re.findall(r'\b\w+\b', line.lower())  # Extract words from the line
+    syllable_count = sum(nltk_syllable_count(word) for word in words)
+    return syllable_count
 
 
 def get_poem_type_by_id(poem_type_id):

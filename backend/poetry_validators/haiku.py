@@ -4,7 +4,7 @@ Handles AI-based validation and manages the Haiku contribution logic.
 
 from backend.database import db
 from flask import jsonify
-from backend.ai_val import fetch_poem_validation_from_ai
+from backend.ai_val import fetch_poem_validation_from_ai, fetch_poem_validation_with_nltk_fallback
 from backend.poem_utils import fetch_all_poem_lines
 from backend.poem_utils import prepare_full_poem
 from backend.schemas import PoemDetailsResponse
@@ -12,7 +12,7 @@ from backend.schemas import PoemDetailsResponse
 
 def validate_haiku(current_poem_content, previous_lines, poem_type_id=1):
     """
-    Validate the current contribution for Haiku using AI-based syllable validation.
+    Validate the current contribution for Haiku using AI-based syllable validation with NLTK fallback.
     """
     # Combine previous and current lines to get the full Haiku structure so far
     # Filter out empty lines from previous_lines to avoid adding an empty line
@@ -21,23 +21,20 @@ def validate_haiku(current_poem_content, previous_lines, poem_type_id=1):
     # Print combined lines for debugging
     print(f"Combined lines: {combined_lines}")
     
-    # Haiku must have exactly 3 lines, but each poet adds one line at a time
+    # Ensure the haiku has a maximum of 3 lines
     if len(combined_lines) > 3:
         return jsonify({'error': 'Haiku can only have 3 lines in total. ⚡️'}), 400
     
     # Create a prompt for the AI based on existing lines and the current poem
     criteria = "5-7-5 syllable structure"
-
-    # Print syllable counts for debugging
-    print(f"Syllable counts: {criteria}")
     
-    # Validate each line
-    for i, line in enumerate(combined_lines):
-        ai_response = fetch_poem_validation_from_ai(line, criteria, poem_type_id)
-        print(f"AI validation for line {i+1}: {ai_response}")  # Debugging purposes
+    # Validate the current line using AI (we pass the line number and content)
+    line_number = len(combined_lines)  # Current line number to be validated
+    validation_response = fetch_poem_validation_with_nltk_fallback(combined_lines[-1], line_number, criteria, poem_type_id)
+    print(f"AI validation for line {line_number}: {validation_response}")  # Debugging purposes
         
-        if "Fail" in ai_response:
-            return jsonify({'error': f'Line {i+1} failed validation. 🌦 Reason: {ai_response}'}), 400
+    if "Fail" in validation_response:
+        return jsonify({'error': f'Line {line_number} failed validation. 🌦 Reason: {validation_response}'}), 400
 
     return None  # If all lines pass validation
 
