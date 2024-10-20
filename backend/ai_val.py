@@ -24,17 +24,30 @@ def fetch_poem_validation_from_ai(poem_line, line_number, criteria, poem_type_id
     poem_type = get_poem_type_by_id(poem_type_id)
     if not poem_type:
         return "Error: Poem type not found."
+    
+    # Prompt structure based on poem type
+    if poem_type_id == 1:
+        poem_structure = "5-7-5 syllable structure (Haiku)"
+    elif poem_type_id == 2:
+        poem_structure = "Nonet poem with syllable count decreasing from 9 to 1 for each line."
+    else:
+        poem_structure = "General poem validation."
 
     # Construct a prompt based on the poem type's criteria
     prompt = f"""
-    You are an expert poetry validator. Given the following criteria: {criteria} for a haiku,
-    and focusing specifically on line {line_number} of the poem:
-    {poem_line}
-    Please validate ONLY line {line_number} against the syllable structure.
-    The first line must have 5 syllables, The second line must have 7 syllables, The third line must have 5 syllables.
-    Syllables should be counted in British English.
-    Respond with 'Pass' if this line follows the required syllable structure. 
-    If it does not, respond with 'Fail' and a concise explanation, specifically noting which line failed and why.
+    You are an expert poetry validator. Given the following poem structure: {poem_structure}, validate the following line.
+    
+    Poem line: "{poem_line}"
+
+    Validation criteria: {criteria}
+
+    Please confirm if this line follows the required syllable structure for line {line_number}.
+    - For Haiku, the structure is 5-7-5.
+    - For Nonet, the syllable count decreases from 9 to 1 per line.
+    
+    If the line follows the required structure, respond with 'Pass'.
+    If the line does not meet the criteria, respond with 'Fail' and provide a concise explanation, 
+    specifically noting the syllable count for the given line and why it doesn't match the expected count.
     """
 
     messages = [
