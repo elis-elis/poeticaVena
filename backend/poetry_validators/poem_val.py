@@ -16,10 +16,9 @@ def validate_poem_content(poem_type, current_poem_content, previous_lines):
     if poem_type.name == 'Haiku':
         return validate_haiku(current_poem_content, previous_lines)
     elif poem_type.name == 'Nonet':
-        return validate_nonet(current_poem_content, previous_lines)  # Assuming you add Nonet handling
+        return validate_nonet(current_poem_content, previous_lines)
     elif poem_type.name == 'Free Verse':
         return validate_free_verse(current_poem_content)
-
     # Add other poem types here as needed
     return None  # No validation needed for certain types
 

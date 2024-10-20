@@ -96,45 +96,60 @@ def submit_poem():
     except Exception as e:
         db.session.rollback()
         return jsonify({'error': f'An error occurred: {str(e)}'}), 500
-    
 
-@routes.route('/submit-poem-details', methods=['POST'])
+
+@routes.route('/submit-individual-poem', methods=['POST'])
 @jwt_required()
-def submit_poem_details():
+def submit_individual_poem():
     """
-    This route processes the content of a poem, which may involve either adding lines to an existing collaborative poem or handling individual poem submissions. 
-    This is where you deal with the validation of lines and overall poem structure.
+    This route handles the full submission of a single, complete poem by one poet.
     """
     poet_id = get_jwt_identity()
 
     try:
-        # Validate incoming data using PoemDetailsCreate Pydantic model
+        # Validate and create the individual poem
+        poem_data = PoemCreate(**request.json)
+        return process_individual_poem(poem_data, poet_id)
+    
+    except ValidationError as e:
+        return jsonify({'errors': e.errors()}), 400
+    
+    except Exception as e:
+        logging.error(f"Error submitting individual poem: {str(e)}")
+        db.session.rollback()
+        return jsonify({'error': f'An error occurred: {str(e)}'}), 500
+
+
+@routes.route('/submit-collaborative-contribution', methods=['POST'])
+@jwt_required()
+def submit_collaborative_contribution():
+    """
+    This route handles the contribution of lines to a collaborative poem, with validation for contribution rules and poem progression.
+    """
+    poet_id = get_jwt_identity()
+
+    try:
+        # Validate incoming contribution details
         poem_details_data = PoemDetailsCreate(**request.json)
-        
-        # Authorization check: ensure poet can submit content for this poem
-        if not is_authorized_poet(poem_details_data.poet_id, poet_id):
-            return jsonify({'error': 'You are not authorized to submit content for this poem. 🍳'}), 403
-        
-        # Check if the poem exists
+
+        # Process collaborative poem contribution
         poem = get_poem_by_id(poem_details_data.poem_id)
         if not poem:
-            return jsonify({'error': 'Poem was not found.'}), 404
+            return jsonify({'error': 'Poem not found.'}), 404
         
         # Log the submission attempt
         logging.info(f"Poet {poet_id} is submitting content for poem {poem.id}.")
 
-        # Process collaborative or individual poem logic
         if poem.is_collaborative:
             return process_collaborative_poem(poem, poem_details_data, poet_id)
         else:
-            return process_individual_poem(poem, poem_details_data)
-    
+            return jsonify({'error': 'This is not a collaborative poem.'}), 400
+
     except ValidationError as e:
-        # Log validation errors
         logging.error(f"Validation error: {e.errors()}")
         return jsonify({'errors': e.errors()}), 400
 
     except Exception as e:
-        logging.error(f"Error submitting poem: {str(e)}")
+        logging.error(f"Error submitting collaborative contribution: {str(e)}")
         db.session.rollback()
         return jsonify({'error': f'An error occurred: {str(e)}'}), 500
