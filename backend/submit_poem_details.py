@@ -11,7 +11,7 @@ from .poetry_validators.poem_val import validate_max_lines, validate_consecutive
 from .poem_utils import prepare_full_poem
 from backend.poetry_validators.free_verse import handle_free_verse
 from backend.poetry_validators.haiku import handle_haiku
-
+from backend.poetry_validators.nonet import handle_nonet
 
 
 def is_authorized_poet(requested_poet_id, authenticated_poet_id):
@@ -82,6 +82,8 @@ def process_collaborative_poem(poem, poem_details_data, poet_id):
         return handle_free_verse(existing_contributions, current_poem_content, poem, poem_details_data)
     elif poem_type.name == "Haiku":
         return handle_haiku(existing_contributions, current_poem_content, poem, poem_details_data, poet_id)
+    elif poem_type.name == "Nonet":
+        return handle_nonet(existing_contributions, current_poem_content, poem, poem_details_data, poet_id)
     
     # Step 4: Common validation for all poem types (max lines, contributions, etc.)
     return validate_and_save_poem(poem_type, existing_contributions, current_poem_content, poem, poem_details_data, poet_id)

@@ -4,7 +4,7 @@ Handles AI-based validation and manages the Haiku contribution logic.
 
 from backend.database import db
 from flask import jsonify
-from backend.ai_val import fetch_poem_validation_from_ai, fetch_poem_validation_with_nltk_fallback
+from backend.ai_val import fetch_poem_validation_with_nltk_fallback
 from backend.poem_utils import fetch_all_poem_lines
 from backend.poem_utils import prepare_full_poem
 from backend.schemas import PoemDetailsResponse
@@ -28,10 +28,9 @@ def validate_haiku(current_poem_content, previous_lines, poem_type_id=1):
     # Create a prompt for the AI based on existing lines and the current poem
     criteria = "5-7-5 syllable structure"
     
-    # Validate the current line using AI (we pass the line number and content)
+    # Validate the current line (we pass the line number and content)
     line_number = len(combined_lines)  # Current line number to be validated
     validation_response = fetch_poem_validation_with_nltk_fallback(combined_lines[-1], line_number, criteria, poem_type_id)
-    print(f"AI validation for line {line_number}: {validation_response}")  # Debugging purposes
         
     if "Fail" in validation_response:
         return jsonify({'error': f'Line {line_number} failed validation. 🌦 Reason: {validation_response}'}), 400
@@ -48,10 +47,6 @@ def handle_haiku(existing_contributions, current_poem_content, poem, poem_detail
     # Combine all previous lines (for presentation purposes, not validation)
     previous_lines = fetch_all_poem_lines(poem.id)
 
-    # Log existing contributions and poem state
-    print(f"Existing contributions: {existing_contributions}")
-    print(f"Current poem state (is_published): {poem.is_published}")
-
     # Validate the poem using AI (this checks all lines so far)
     validation_error = validate_haiku(current_poem_content, previous_lines)
     if validation_error:
@@ -65,7 +60,6 @@ def handle_haiku(existing_contributions, current_poem_content, poem, poem_detail
     if existing_contributions + 1 == 3:
         poem.is_published = True
         db.session.commit()
-        print(f"Haiku completed and published with 3 contributions.")
         return jsonify({'message': 'Haiku is now completed and published. 🌸'}), 201
 
     # Return the poem details along with the full poem so far

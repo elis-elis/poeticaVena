@@ -49,7 +49,9 @@ def get_poem_types():
 @jwt_required()
 def submit_poem():
     """
-    This function handles the submission of new poems:
+    This route handles the creation of a new poem. 
+    It validates the input and saves the poem to the database. 
+    This is typically where you’d create a poem before any lines are added.
         - Retrieves the currently logged-in user's ID.
         - Validates the poem data using the PoemCreate Pydantic model.
         - Creates a new Poem entry in the database if validation passes.
@@ -100,10 +102,8 @@ def submit_poem():
 @jwt_required()
 def submit_poem_details():
     """
-    This route handles the submission of poem details (actual poetry content).
-    It supports both individual and collaborative poem submissions.
-    Collaborative poems are built line-by-line, validated by AI, and completed
-    once all contributions pass the poem type's criteria.
+    This route processes the content of a poem, which may involve either adding lines to an existing collaborative poem or handling individual poem submissions. 
+    This is where you deal with the validation of lines and overall poem structure.
     """
     poet_id = get_jwt_identity()
 
@@ -119,6 +119,9 @@ def submit_poem_details():
         poem = get_poem_by_id(poem_details_data.poem_id)
         if not poem:
             return jsonify({'error': 'Poem was not found.'}), 404
+        
+        # Log the submission attempt
+        logging.info(f"Poet {poet_id} is submitting content for poem {poem.id}.")
 
         # Process collaborative or individual poem logic
         if poem.is_collaborative:
@@ -127,6 +130,8 @@ def submit_poem_details():
             return process_individual_poem(poem, poem_details_data)
     
     except ValidationError as e:
+        # Log validation errors
+        logging.error(f"Validation error: {e.errors()}")
         return jsonify({'errors': e.errors()}), 400
 
     except Exception as e:

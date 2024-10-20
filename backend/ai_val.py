@@ -43,7 +43,7 @@ def fetch_poem_validation_from_ai(poem_line, line_number, criteria, poem_type_id
 
     Please confirm if this line follows the required syllable structure for line {line_number}.
     - For Haiku, the structure is 5-7-5.
-    - For Nonet, the syllable count decreases from 9 to 1 per line.
+    - For Nonet, the syllable count decreases from 9 to 1 per line: 9-8-7-6-5-4-3-2-1.
     
     If the line follows the required structure, respond with 'Pass'.
     If the line does not meet the criteria, respond with 'Fail' and provide a concise explanation, 
@@ -97,7 +97,8 @@ def fetch_poem_validation_with_nltk_fallback(poem_line, line_number, criteria, p
 
     # Fallback: Use NLTK syllable counting to validate
     nltk_syllable_count = count_syllables_in_line(poem_line)
-    expected_syllables = [5, 7, 5][line_number - 1]  # Get expected syllables based on line number
+    # expected_syllables = [5, 7, 5][line_number - 1]  # Get expected syllables based on line number
+    expected_syllables = 9 - (line_number - 1)  # For Nonet: 9, 8, 7, 6, ..., 1
 
     # Compare NLTK result with expected syllable count for the current line
     if nltk_syllable_count == expected_syllables:
