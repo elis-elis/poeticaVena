@@ -16,8 +16,10 @@ def count_syllables(word):
         'he': 1,
         'she': 1,
         'we': 1,
-        'coffee': 2,  # Special case for tricky words
-        'the': 1,  # Treat "the" as a single syllable
+        'coffee': 2,
+        'the': 1,
+        'dropped': 1,
+        'loved': 1
     }
     if word in exceptions:
         return exceptions[word]
