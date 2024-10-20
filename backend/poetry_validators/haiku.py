@@ -1,12 +1,16 @@
+"""
+Handles AI-based validation and manages the Haiku contribution logic.
+"""
+
 from backend.database import db
 from flask import jsonify
-from backend.ai_val import fetch_poem_validation
+from backend.ai_val import fetch_poem_validation_from_ai
 from backend.poem_utils import fetch_all_poem_lines
 from backend.poem_utils import prepare_full_poem
 from backend.schemas import PoemDetailsResponse
 
 
-def validate_haiku(current_poem_content, previous_lines):
+def validate_haiku(current_poem_content, previous_lines, poem_type_id=1):
     """
     Validate the current contribution for Haiku using AI-based syllable validation.
     """
@@ -29,7 +33,7 @@ def validate_haiku(current_poem_content, previous_lines):
     
     # Validate each line
     for i, line in enumerate(combined_lines):
-        ai_response = fetch_poem_validation(line, criteria, poem_type_id)
+        ai_response = fetch_poem_validation_from_ai(line, criteria, poem_type_id)
         print(f"AI validation for line {i+1}: {ai_response}")  # Debugging purposes
         
         if "Fail" in ai_response:

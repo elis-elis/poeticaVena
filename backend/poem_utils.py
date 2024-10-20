@@ -1,3 +1,7 @@
+"""
+Retains database fetching functions.
+"""
+
 from .models import Poem, PoemType, PoemDetails
 
 

@@ -1,6 +1,9 @@
+"""
+Handles AI-based validation logic (i.e., sending prompts to the OpenAI API).
+"""
+
 import os
 from openai import OpenAI
-from .poem_utils import count_syllables
 import logging
 
 
@@ -12,7 +15,7 @@ from .poem_utils import get_poem_type_by_id
 load_dotenv()
 
 
-def fetch_poem_validation(poem_line, criteria, poem_type_id):
+def fetch_poem_validation_from_ai(poem_line, criteria, poem_type_id):
     """
     Sends a poem line to OpenAI's API for validation based on poem type criteria.
     """
@@ -20,9 +23,6 @@ def fetch_poem_validation(poem_line, criteria, poem_type_id):
     poem_type = get_poem_type_by_id(poem_type_id)
     if not poem_type:
         return "Error: Poem type not found."
-
-    syllable_count = count_syllables(poem_line)
-    logging.debug(f"Syllable count for '{poem_line}': {syllable_count}")
 
     # Construct a prompt based on the poem type's criteria
     prompt = f"""
