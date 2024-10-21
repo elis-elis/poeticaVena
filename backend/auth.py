@@ -25,8 +25,8 @@ def login():
     # Find poet by email
     poet = Poet.query.filter_by(email=email).first()
     if poet and check_password_hash(poet.password_hash, password):
-        access_token = create_access_token(identity=poet.id, expires_delta=timedelta(hours=1))
-        refresh_token = create_refresh_token(identity=poet.id)
+        access_token = create_access_token(identity=poet.email, expires_delta=timedelta(hours=1))
+        refresh_token = create_refresh_token(identity=poet.email)
 
         # Create a response with the access token in the body
         response = make_response(jsonify(access_token=access_token, token_type="bearer"), 200)
@@ -47,6 +47,16 @@ def login():
     else:
         print(f'Failed login attempt for {email}')  # Debug statement
         return jsonify({"error": "Invalid email or password. 🪭 "}), 401
+
+
+@auth.route('/poet/me', methods=['GET'])
+@jwt_required()
+def fetch_poet():
+    current_user = get_jwt_identity()
+    poet = Poet.query.filter_by(email=current_user).first()
+    poet_response = PoetResponse.model_validate(poet)
+
+    return jsonify(poet_response.model_dump()), 201
 
 
 @auth.route('/refresh', methods=['POST'])
