@@ -11,7 +11,7 @@ def validate_free_verse(current_poem_content):
     return None
 
 
-def handle_free_verse(existing_contributions, current_poem_content, poem, poem_details_data):
+def handle_free_verse(existing_contributions, current_poem_content, poem, poem_details_data, poet_id):
     """
     Handle contributions for Free Verse poems, which have no specific structural validation.
     """

@@ -79,7 +79,7 @@ def process_collaborative_poem(poem, poem_details_data, poet_id):
 
     # Delegate control to specific poem type handlers (Haiku, Free Verse, etc.)
     if poem_type.name == "Free Verse":
-        return handle_free_verse(existing_contributions, current_poem_content, poem, poem_details_data)
+        return handle_free_verse(existing_contributions, current_poem_content, poem, poem_details_data, poet_id)
     elif poem_type.name == "Haiku":
         return handle_haiku(existing_contributions, current_poem_content, poem, poem_details_data, poet_id)
     elif poem_type.name == "Nonet":

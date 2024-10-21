@@ -120,7 +120,7 @@ def submit_individual_poem():
         return jsonify({'error': f'An error occurred: {str(e)}'}), 500
 
 
-@routes.route('/submit-collaborative-contribution', methods=['POST'])
+@routes.route('/submit-collab-contribution', methods=['POST'])
 @jwt_required()
 def submit_collaborative_contribution():
     """
@@ -129,10 +129,12 @@ def submit_collaborative_contribution():
     poet_id = get_jwt_identity()
 
     try:
-        # Validate incoming contribution details
         poem_details_data = PoemDetailsCreate(**request.json)
 
-        # Process collaborative poem contribution
+        # Authorization: Ensure the user is allowed to submit content for this poem
+        if not is_authorized_poet(poem_details_data.poet_id, poet_id):
+            return jsonify({'error': 'You are not authorized to submit content for this poem. 🍳'}), 403
+
         poem = get_poem_by_id(poem_details_data.poem_id)
         if not poem:
             return jsonify({'error': 'Poem not found.'}), 404
