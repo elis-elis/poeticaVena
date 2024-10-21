@@ -85,45 +85,4 @@ def process_collaborative_poem(poem, poem_details_data, poet_id):
     elif poem_type.name == "Nonet":
         return handle_nonet(existing_contributions, current_poem_content, poem, poem_details_data, poet_id)
     
-    # Step 4: Common validation for all poem types (max lines, contributions, etc.)
-    return validate_and_save_poem(poem_type, existing_contributions, current_poem_content, poem, poem_details_data, poet_id)
-
-
-def validate_and_save_poem(poem_type, existing_contributions, current_poem_content, poem, poem_details_data, poet_id):
-    """
-    Common validation logic for all poem types, including max lines and contribution rules.
-    """
-    # Step 1: Validate max lines
-    max_lines_error = validate_max_lines(poem_type, existing_contributions)
-    if max_lines_error:
-        return max_lines_error
-
-    # Step 2: Check for consecutive contributions by the same poet
-    consecutive_error = validate_consecutive_contributions(existing_contributions, poet_id, poem.id)
-    if consecutive_error:
-        return consecutive_error
-
-    # Step 3: Validate the poem content based on poem type criteria
-    previous_lines = fetch_all_poem_lines(poem.id)
-    validation_error = validate_poem_content(poem_type, current_poem_content, previous_lines)
-    if validation_error:
-        return validation_error
-
-    # Step 4: Save the contribution and prepare the full poem
-    poem_details = save_poem_details(poem_details_data)
-    full_poem_so_far = prepare_full_poem(existing_contributions, current_poem_content, poem.id)
-
-    # Step 5: Check if the poem is now complete (i.e., max lines reached)
-    if check_if_collaborative_poem_completed(existing_contributions + 1, poem_type.criteria['max_lines']):
-        poem.is_published = True
-        db.session.commit()
-        return jsonify({'message': 'Poem is now completed and published. 🌵'}), 201
-
-    # Return poem details and next steps
-    poem_details_response = PoemDetailsResponse.model_validate(poem_details)
-    return jsonify({
-        'message': 'Contribution accepted and published! 🌱',
-        'poem_details': poem_details_response.model_dump(),
-        'full_poem': full_poem_so_far,
-        'next_step': f'{poem_type.criteria["max_lines"] - (existing_contributions + 1)} line(s) left to complete the poem.'
-    }), 201
+    return jsonify({'error': 'Poem type is not supported yet. 🌵'}), 400

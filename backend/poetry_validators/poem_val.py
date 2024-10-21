@@ -4,6 +4,7 @@ The poem_val.py file handles the validation logic for different poem types.
 
 from flask import jsonify
 from backend.poem_utils import get_last_contribution
+import logging
 
 def validate_poem_content(poem_type, current_poem_content, previous_lines):
     """
@@ -48,7 +49,8 @@ def validate_consecutive_contributions(existing_contributions, poet_id, poem_id)
     
     if existing_contributions > 0:
         last_contribution = get_last_contribution(poem_id)
-        if last_contribution.poet_id == poet_id:
+        if last_contribution.poet_id and last_contribution.poet_id == poet_id:
+            logging.warning(f"Consecutive contribution attempt by poet {poet_id} detected.")
             return jsonify({'error': 'You cannot contribute consecutive lines. 🦖'}), 400
         
     return None

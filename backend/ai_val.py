@@ -97,8 +97,8 @@ def fetch_poem_validation_with_nltk_fallback(poem_line, line_number, criteria, p
 
     # Fallback: Use NLTK syllable counting to validate
     nltk_syllable_count = count_syllables_in_line(poem_line)
-    # expected_syllables = [5, 7, 5][line_number - 1]  # Get expected syllables based on line number
-    expected_syllables = 9 - (line_number - 1)  # For Nonet: 9, 8, 7, 6, ..., 1
+    expected_syllables = [5, 7, 5][line_number - 1]  # Get expected syllables based on line number
+    # expected_syllables = 9 - (line_number - 1)  # For Nonet: 9, 8, 7, 6, ..., 1
 
     # Compare NLTK result with expected syllable count for the current line
     if nltk_syllable_count == expected_syllables:

@@ -8,6 +8,17 @@ from backend.ai_val import fetch_poem_validation_with_nltk_fallback
 from backend.poem_utils import fetch_all_poem_lines
 from backend.poem_utils import prepare_full_poem
 from backend.schemas import PoemDetailsResponse
+from backend.poetry_validators.poem_val import validate_consecutive_contributions
+
+
+def validate_haiku_max_lines(existing_contributions):
+    """
+    Validate that Haiku can only have 3 lines.
+    """
+    max_allowed_lines = 3
+    if existing_contributions + 1 > max_allowed_lines:
+        return jsonify({'error': 'Haiku can only have 3 lines in total. 🌿'}), 400
+    return None
 
 
 def validate_haiku(current_poem_content, previous_lines, poem_type_id=1):
@@ -43,6 +54,16 @@ def handle_haiku(existing_contributions, current_poem_content, poem, poem_detail
     Handle contributions for Haiku poems using AI validation.
     """
     from backend.submit_poem_details import save_poem_details
+
+    # Check for consecutive contributions
+    consecutive_error = validate_consecutive_contributions(existing_contributions, poet_id, poem.id)
+    if consecutive_error:
+        return consecutive_error
+    
+    # Validate max lines for Haiku
+    max_lines_error = validate_haiku_max_lines(existing_contributions)
+    if max_lines_error:
+        return max_lines_error
 
     # Combine all previous lines (for presentation purposes, not validation)
     previous_lines = fetch_all_poem_lines(poem.id)
