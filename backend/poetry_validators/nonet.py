@@ -4,6 +4,18 @@ from backend.ai_val import fetch_poem_validation_with_nltk_fallback
 from backend.poem_utils import fetch_all_poem_lines
 from backend.poem_utils import prepare_full_poem
 from backend.schemas import PoemDetailsResponse
+from backend.poetry_validators.poem_val import validate_consecutive_contributions
+
+
+
+def validate_nonet_max_lines(existing_contributions):
+    """
+    Validate that Nonet can only have 9 lines.
+    """
+    max_allowed_lines = 9
+    if existing_contributions + 1 > max_allowed_lines:
+        return jsonify({'error': 'Nonet can only have 9 lines in total. 🌿'}), 400
+    return None
 
 
 def validate_nonet(current_poem_content, previous_lines, poem_type_id=2):
@@ -40,8 +52,15 @@ def handle_nonet(existing_contributions, current_poem_content, poem, poem_detail
     
     previous_lines = fetch_all_poem_lines(poem.id)
 
-    print(f"Existing contributions: {existing_contributions}")
-    print(f"Current poem state (is_published): {poem.is_published}")
+    # Check for consecutive contributions
+    consecutive_error = validate_consecutive_contributions(existing_contributions, poet_id, poem.id)
+    if consecutive_error:
+        return consecutive_error
+    
+    # Validate max lines for Haiku
+    max_lines_error = validate_nonet_max_lines(existing_contributions)
+    if max_lines_error:
+        return max_lines_error
 
     # Validate the Nonet structure (9 lines with decreasing syllables)
     poem_type_id = poem.poem_type_id  # Ensure the poem_type_id is being passed from the poem object
@@ -57,7 +76,6 @@ def handle_nonet(existing_contributions, current_poem_content, poem, poem_detail
     if existing_contributions + 1 == 9:
         poem.is_published = True
         db.session.commit()
-        print(f"Nonet completed and published with 9 contributions.")
         return jsonify({'message': 'Nonet is now completed and published. 🌸'}), 201
 
     # Return the poem details along with the full poem so far
@@ -66,5 +84,5 @@ def handle_nonet(existing_contributions, current_poem_content, poem, poem_detail
         'message': 'Contribution accepted! 🌱',
         'poem_details': poem_details_response.model_dump(),
         'full_poem': full_poem_so_far,
-        'next_step': 'Continue contributing to complete the Nonet.' if existing_contributions + 1 < 9 else 'This Nonet is now complete.'
+        'next_step': 'Continue contributing to complete the Nonet.' if existing_contributions + 1 < 9 else 'This Nonet is now complete and it reads good.'
     }), 201
