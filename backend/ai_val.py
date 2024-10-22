@@ -64,7 +64,11 @@ def fetch_haiku_validation_from_ai(poem_line, line_number):
         # Make the call to the GPT model
         response = client.chat.completions.create(
             model="gpt-4o-mini",
-            messages=messages
+            messages=messages,
+            temperature=0.3,  # Low temperature for more deterministic responses
+            top_k=5,  # Consider the top 5 tokens at each step for focused generation
+            top_p=0.9,  # Use tokens that cover 90% of the probability mass, balancing diversity and coherence
+            max_tokens=100  # Limit the response length to 100 tokens, which should be sufficient for validation
         )
 
         # Log the response for debugging
@@ -117,8 +121,12 @@ def fetch_nonet_validation_from_ai(poem_line, line_number):
     try:
         # Make the call to the GPT model
         response = client.chat.completions.create(
-            model="gpt-3.5-turbo",
-            messages=messages
+            model="gpt-4o-mini",
+            messages=messages,
+            temperature=0.3,  # Low temperature for more deterministic responses
+            top_k=5,  # Consider the top 5 tokens at each step for focused generation
+            top_p=0.9,  # Use tokens that cover 90% of the probability mass, balancing diversity and coherence
+            max_tokens=100  # Limit the response length to 100 tokens, which should be sufficient for validation
         )
 
         # Log the response for debugging

@@ -1,10 +1,6 @@
-"""
-Handles AI-based validation and manages the Haiku contribution logic.
-"""
-
 from backend.database import db
 from flask import jsonify
-from backend.ai_val import fetch_poem_validation_with_nltk_fallback
+from backend.ai_val import fetch_haiku_validation_from_ai, fetch_poem_validation_with_nltk_fallback
 from backend.poem_utils import fetch_all_poem_lines
 from backend.poem_utils import prepare_full_poem
 from backend.schemas import PoemDetailsResponse
@@ -36,17 +32,24 @@ def validate_haiku(current_poem_content, previous_lines, poem_type_id=1):
     if len(combined_lines) > 3:
         return jsonify({'error': 'Haiku can only have 3 lines in total. ⚡️'}), 400
     
-    # Create a prompt for the AI based on existing lines and the current poem
-    criteria = "5-7-5 syllable structure"
-    
-    # Validate the current line (we pass the line number and content)
-    line_number = len(combined_lines)  # Current line number to be validated
-    validation_response = fetch_poem_validation_with_nltk_fallback(combined_lines[-1], line_number, criteria, poem_type_id)
-        
-    if "Fail" in validation_response:
-        return jsonify({'error': f'Line {line_number} failed validation. 🌦 Reason: {validation_response}'}), 400
+    # Validate each line based on its number and syllable structure (5-7-5)
+    for i, line in enumerate(combined_lines):
+        line_number = i + 1  # Line number to be validated (1-based index)
 
-    return None  # If all lines pass validation
+        # AI-based validation for Haiku (5-7-5 structure)
+        validation_response = fetch_haiku_validation_from_ai(line, line_number)
+        
+        # If AI validation fails, use NLTK as a fallback
+        if "Fail" in validation_response:
+            # Call the fallback function with NLTK syllable counting logic
+            nltk_response = fetch_poem_validation_with_nltk_fallback(line, line_number, "5-7-5 syllable structure", poem_type_id)
+
+            # If NLTK also fails, return an error
+            if "Fail" in nltk_response:
+                return jsonify({'error': f'Line {line_number} failed validation. 🌦 Reason: {nltk_response}'}), 400
+
+    # If all lines pass validation
+    return None
 
 
 def handle_haiku(existing_contributions, current_poem_content, poem, poem_details_data, poet_id):
@@ -89,5 +92,5 @@ def handle_haiku(existing_contributions, current_poem_content, poem, poem_detail
         'message': 'Contribution accepted! 🌱',
         'poem_details': poem_details_response.model_dump(),
         'full_poem': full_poem_so_far,
-        'next_step': 'Complete the Haiku with one more line.' if existing_contributions + 1 < 3 else 'This Haiku is now complete.'
+        'next_step': 'Complete the Haiku with one more line.' if existing_contributions + 1 < 3 else 'This Haiku is now complete and it reads good.'
     }), 201

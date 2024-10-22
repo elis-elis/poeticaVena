@@ -1,6 +1,6 @@
 from backend.database import db
 from flask import jsonify
-from backend.ai_val import fetch_poem_validation_with_nltk_fallback
+from backend.ai_val import fetch_nonet_validation_from_ai, fetch_poem_validation_with_nltk_fallback
 from backend.poem_utils import fetch_all_poem_lines
 from backend.poem_utils import prepare_full_poem
 from backend.schemas import PoemDetailsResponse
@@ -30,18 +30,25 @@ def validate_nonet(current_poem_content, previous_lines, poem_type_id=2):
         return jsonify({'error': 'Nonet can only have 9 lines in total. ⚡️'}), 400
 
     # The criteria for a Nonet poem is a syllable structure starting with 9 syllables and decreasing by 1 per line
-    expected_syllables = 9 - (len(combined_lines) - 1)  # e.g., for the 1st line, expect 9 syllables, then 8, etc.
-    criteria = f"The current line should have {expected_syllables} syllables."
+    for i, line in enumerate(combined_lines):
+        line_number = i + 1  # Line number in the poem (1-based index)
+        expected_syllables = 9 - (i)  # 9 syllables for the first line, then decreasing by 1 for each subsequent line
+        criteria = f"The current line should have {expected_syllables} syllables."
 
-    # Validate the latest line using AI + NLTK fallback
-    line_number = len(combined_lines)
-    validation_response = fetch_poem_validation_with_nltk_fallback(combined_lines[-1], line_number, criteria, poem_type_id)
+        # AI-based validation for Nonet structure
+        validation_response = fetch_nonet_validation_from_ai(line, line_number, expected_syllables)
+        
+        # If AI validation fails, use NLTK as a fallback
+        if "Fail" in validation_response:
+            # Call the fallback function with NLTK syllable counting logic
+            nltk_response = fetch_poem_validation_with_nltk_fallback(line, line_number, criteria, poem_type_id)
 
-    # If the AI or NLTK fallback returns "Fail", show the error
-    if "Fail" in validation_response:
-        return jsonify({'error': f'Line {line_number} failed validation. 🌦 Reason: {validation_response}'}), 400
+            # If NLTK also fails, return an error
+            if "Fail" in nltk_response:
+                return jsonify({'error': f'Line {line_number} failed validation. 🌦 Reason: {nltk_response}'}), 400
 
-    return None  # If validation passes
+    # If all lines pass validation
+    return None
 
 
 def handle_nonet(existing_contributions, current_poem_content, poem, poem_details_data, poet_id):
