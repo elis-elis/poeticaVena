@@ -15,36 +15,93 @@ from .poem_utils import get_poem_type_by_id, count_syllables_in_line
 load_dotenv()
 
 
-def fetch_poem_validation_from_ai(poem_line, line_number, criteria, poem_type_id):
+def fetch_poem_validation_from_ai(poem_line, line_number, poem_type_id):
     """
-    Sends a poem line to OpenAI's API for validation based on poem type criteria.
+    Sends a poem line to OpenAI's API for validation based on the specific poem type.
     It explicitly ensures validation is focused on a specific line number.
     """
-    # Get the poem type with its criteria
-    poem_type = get_poem_type_by_id(poem_type_id)
-    if not poem_type:
-        return "Error: Poem type not found."
-    
-    # Prompt structure based on poem type
+    # Call the specific validation function based on the poem type ID
     if poem_type_id == 1:
-        poem_structure = "5-7-5 syllable structure (Haiku)"
+        return fetch_haiku_validation_from_ai(poem_line, line_number)
     elif poem_type_id == 2:
-        poem_structure = "Nonet poem with syllable count decreasing from 9 to 1 for each line."
+        return fetch_nonet_validation_from_ai(poem_line, line_number)
     else:
-        poem_structure = "General poem validation."
+        return "Error: Poem type not recognized."
 
-    # Construct a prompt based on the poem type's criteria
+
+
+def fetch_haiku_validation_from_ai(poem_line, line_number):
+    """
+    Sends a Haiku poem line to OpenAI's API for validation based on the 5-7-5 syllable structure.
+    """
+    # Define the Haiku structure
+    poem_structure = "5-7-5 syllable structure (Haiku)"
+    
+    # Construct a prompt for Haiku validation
     prompt = f"""
     You are an expert poetry validator. Given the following poem structure: {poem_structure}, validate the following line.
     
     Poem line: "{poem_line}"
 
-    Validation criteria: {criteria}
+    Validation criteria: 5-7-5 syllable structure.
 
     Please confirm if this line follows the required syllable structure for line {line_number}.
-    - For Haiku, the structure is 5-7-5.
-    - For Nonet, the syllable count decreases from 9 to 1 per line: 9-8-7-6-5-4-3-2-1.
+    - For Haiku, the structure is 5-7-5 (5 syllables for the first line, 7 for the second, and 5 for the third).
+
+    If the line follows the required structure, respond with 'Pass'.
+    If the line does not meet the criteria, respond with 'Fail' and provide a concise explanation, 
+    specifically noting the syllable count for the given line and why it doesn't match the expected count.
+    """
+
+    messages = [
+        {
+            "role": "user",
+            "content": prompt
+        }
+    ]
+
+    try:
+        # Make the call to the GPT model
+        response = client.chat.completions.create(
+            model="gpt-4o-mini",
+            messages=messages
+        )
+
+        # Log the response for debugging
+        logging.debug(f"Full response: {response}")
+
+        choices = response.choices
+        if choices and len(choices) > 0:
+            message = choices[0].message.content.strip()
+            logging.debug(f"Validating Haiku line {line_number}: '{poem_line}'")
+            return message
+        else:
+            logging.error("Error: 'choices' missing or empty in response.")
+            return "Error: No choices in response."
+
+    except Exception as e:
+        logging.error(f"Error: {str(e)}")
+        return f"Error: {str(e)}"
     
+
+def fetch_nonet_validation_from_ai(poem_line, line_number):
+    """
+    Sends a Nonet poem line to OpenAI's API for validation based on the 9-8-7-6-5-4-3-2-1 syllable structure.
+    """
+    # Define the Nonet structure
+    poem_structure = "Nonet poem with syllable count decreasing from 9 to 1 for each line."
+    
+    # Construct a prompt for Nonet validation
+    prompt = f"""
+    You are an expert poetry validator. Given the following poem structure: {poem_structure}, validate the following line.
+    
+    Poem line: "{poem_line}"
+
+    Validation criteria: 9-8-7-6-5-4-3-2-1 syllable structure.
+
+    Please confirm if this line follows the required syllable structure for line {line_number}.
+    - For Nonet, the syllable count decreases from 9 to 1 per line: 9 syllables for the first line, 8 for the second, down to 1 for the last line.
+
     If the line follows the required structure, respond with 'Pass'.
     If the line does not meet the criteria, respond with 'Fail' and provide a concise explanation, 
     specifically noting the syllable count for the given line and why it doesn't match the expected count.
@@ -70,7 +127,7 @@ def fetch_poem_validation_from_ai(poem_line, line_number, criteria, poem_type_id
         choices = response.choices
         if choices and len(choices) > 0:
             message = choices[0].message.content.strip()
-            logging.debug(f"Validating line {line_number}: '{poem_line}' with criteria: {criteria}")
+            logging.debug(f"Validating Nonet line {line_number}: '{poem_line}'")
             return message
         else:
             logging.error("Error: 'choices' missing or empty in response.")
