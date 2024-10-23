@@ -1,7 +1,7 @@
 from flask import Blueprint, jsonify, request
 from flask_jwt_extended import jwt_required, get_jwt_identity
 from pydantic import ValidationError
-from .models import Poem, PoemType
+from .models import Poem, PoemType, Poet
 from .database import db
 from .schemas import PoemCreate, PoemTypeResponse, PoemResponse, PoemDetailsCreate
 from .submit_poem_details import process_individual_poem, process_collaborative_poem, is_authorized_poet
@@ -52,14 +52,19 @@ def submit_poem():
     This route handles the creation of a new poem. 
     It validates the input and saves the poem to the database. 
     This is typically where you’d create a poem before any lines are added.
-        - Retrieves the currently logged-in user's ID.
+        - Retrieves the currently logged-in user's email.
         - Validates the poem data using the PoemCreate Pydantic model.
         - Creates a new Poem entry in the database if validation passes.
         - Returns a JSON response with the poem details or error message.
     """
     try:
-        # Get current logged-in user (poet) ID from JWT token
-        poet_id = get_jwt_identity()
+        # Get current logged-in poet's email from JWT token
+        poet_email = get_jwt_identity()
+
+        # Find the poet by their email (whoch is stored in the token)
+        poet = Poet.query.filter_by(email=poet_email).first()
+        if not poet:
+            return jsonify({'error': 'Poet not found.'}), 404
 
         # Validate incoming JSON data using PoemCreate Pydantic model
         poem_data = PoemCreate(**request.json)
@@ -69,7 +74,7 @@ def submit_poem():
             title=poem_data.title,
             poem_type_id=poem_data.poem_type_id,
             is_collaborative=poem_data.is_collaborative,
-            poet_id=poet_id  # Associate the poem with the currently logged-in poet
+            poet_id=poet.id  # Associate the poem with the currently logged-in poet
         )
         db.session.add(new_poem)
         db.session.commit()
