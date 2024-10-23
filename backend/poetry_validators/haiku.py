@@ -1,6 +1,6 @@
 from backend.database import db
 from flask import jsonify
-from backend.ai_val import fetch_haiku_validation_from_ai, fetch_poem_validation_with_nltk_fallback
+from backend.ai_val import fetch_haiku_validation_from_ai, fetch_poem_validation_from_nltk
 from backend.poem_utils import fetch_all_poem_lines
 from backend.poem_utils import prepare_full_poem
 from backend.schemas import PoemDetailsResponse
@@ -42,7 +42,7 @@ def validate_haiku(current_poem_content, previous_lines, poem_type_id=1):
         # If AI validation fails, use NLTK as a fallback
         if "Fail" in validation_response:
             # Call the fallback function with NLTK syllable counting logic
-            nltk_response = fetch_poem_validation_with_nltk_fallback(line, line_number, "5-7-5 syllable structure", poem_type_id)
+            nltk_response = fetch_poem_validation_from_nltk(line, line_number, "5-7-5 syllable structure", poem_type_id)
 
             # If NLTK also fails, return an error
             if "Fail" in nltk_response:
@@ -78,10 +78,10 @@ def handle_haiku(existing_contributions, current_poem_content, poem, poem_detail
 
     # Save the contribution after passing AI validation
     poem_details = save_poem_details(poem_details_data)
-    full_poem_so_far = prepare_full_poem(existing_contributions, current_poem_content, poem.id)
+    full_poem_so_far = prepare_full_poem(current_poem_content, poem.id)
 
     # Check if the Haiku is complete (3 lines in total)
-    if existing_contributions + 1 == 3:
+    if len(existing_contributions) + 1 == 3:
         poem.is_published = True
         db.session.commit()
         return jsonify({'message': 'Haiku is now completed and published. 🌸'}), 201
