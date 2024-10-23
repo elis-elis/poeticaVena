@@ -134,11 +134,8 @@ def submit_collaborative_contribution():
     poet_id = get_jwt_identity()
 
     try:
+        # Validate the incoming data using the PoemDetailsCreate schema
         poem_details_data = PoemDetailsCreate(**request.json)
-
-        # Authorization: Ensure the user is allowed to submit content for this poem
-        if not is_authorized_poet(poem_details_data.poet_id, poet_id):
-            return jsonify({'error': 'You are not authorized to submit content for this poem. 🍳'}), 403
 
         poem = get_poem_by_id(poem_details_data.poem_id)
         if not poem:
@@ -147,6 +144,11 @@ def submit_collaborative_contribution():
         # Log the submission attempt
         logging.info(f"Poet {poet_id} is submitting content for poem {poem.id}.")
 
+        # Authorization: Ensure the user is allowed to submit content for this poem
+        if not is_authorized_poet(poem, poet_id):
+            return jsonify({'error': 'You are not authorized to submit content for this poem. 🍳'}), 403
+        
+        # If the poem is collaborative, proceed to process the contribution
         if poem.is_collaborative:
             return process_collaborative_poem(poem, poem_details_data, poet_id)
         else:

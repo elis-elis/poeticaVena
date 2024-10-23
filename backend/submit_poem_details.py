@@ -6,19 +6,24 @@ from flask import jsonify
 from .database import db
 from .models import PoemDetails
 from .schemas import PoemDetailsResponse
-from .poem_utils import get_poem_type_by_id, get_poem_contributions, fetch_all_poem_lines
-from .poetry_validators.poem_val import validate_max_lines, validate_consecutive_contributions, validate_poem_content
-from .poem_utils import prepare_full_poem
+from .poem_utils import get_poem_type_by_id, get_poem_contributions
 from backend.poetry_validators.free_verse import handle_free_verse
 from backend.poetry_validators.haiku import handle_haiku
 from backend.poetry_validators.nonet import handle_nonet
 
 
-def is_authorized_poet(requested_poet_id, authenticated_poet_id):
+def is_authorized_poet(poem, authenticated_poet_id):
     """
-    Check if the poet is authorized to submit the content.
+    Check if the authenticated poet is authorized to submit the content.
+    - For collaborative poems, allow any authenticated user to contribute.
+    - For non-collaborative poems, only the original poet can contribute.
     """
-    return requested_poet_id == authenticated_poet_id
+    if poem.is_collaborative:
+        # For collaborative poems, allow any authenticated user to submit content
+        return True
+    else:
+        # For non-collaborative poems, only allow the original poet
+        return poem.poet_id == authenticated_poet_id
 
 
 def save_poem_details(poem_details_data):
