@@ -1,7 +1,3 @@
-"""
-Retains database fetching functions.
-"""
-
 from .models import Poem, PoemType, PoemDetails
 import nltk
 from nltk.corpus import cmudict
@@ -53,10 +49,9 @@ def get_poem_by_id(poem_id):
 
 def get_poem_contributions(poem_id):
     """
-    Count how many contributions exist for a specific poem.
+    Fetch all contributions for a specific poem.
     """
-    return PoemDetails.query.filter_by(poem_id=poem_id).count() or 0
-
+    return PoemDetails.query.filter_by(poem_id=poem_id).all() 
 
 def get_last_contribution(poem_id):
     """
@@ -89,6 +84,10 @@ def fetch_all_poem_lines(poem_id):
 def prepare_full_poem(current_poem_content, poem_id):
     """
     Prepare the full poem so far including all previous contributions and the new one.
+    This fetches the lines already contributed to the poem.
+    The new line is concatenated with the existing content to form the complete poem preview.
+    Use .strip() to remove any extra whitespace or newline characters. 
+    Also, if previous_lines is empty (for new poems), the result is just the new content.
     """
     # Fetch the existing lines
     previous_lines = fetch_all_poem_lines(poem_id)
