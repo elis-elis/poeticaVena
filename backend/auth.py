@@ -25,7 +25,7 @@ def login():
     # Find poet by email
     poet = Poet.query.filter_by(email=email).first()
     if poet and check_password_hash(poet.password_hash, password):
-        access_token = create_access_token(identity=poet.email, expires_delta=timedelta(hours=1))
+        access_token = create_access_token(identity={'poet_id': poet.id, 'email': poet.email}, expires_delta=timedelta(hours=1))
         refresh_token = create_refresh_token(identity=poet.email)
 
         # Create a response with the access token in the body
