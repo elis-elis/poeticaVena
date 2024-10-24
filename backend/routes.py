@@ -6,7 +6,7 @@ from .database import db
 from .schemas import PoemCreate, PoemTypeResponse, PoemResponse, PoemDetailsCreate
 from .submit_poem_details import process_individual_poem, process_collaborative_poem, is_authorized_poet
 from .poem_utils import get_poem_by_id
-from .poet_utils import get_poet_by_email
+from .poet_utils import get_current_poet
 import logging
 from flask_jwt_extended.exceptions import JWTDecodeError
 
@@ -24,8 +24,8 @@ def home():
     This function serves as an entry point for authenticated users.
     Currently returns a placeholder message for authenticated users.
     """
-    poet_id = get_jwt_identity()    # Get the current user (poet) ID from the JWT token
-    return jsonify(message=f'You are (almost) welcomed here, dear poet(esse) with ID {poet_id}. 🍸'), 200
+    poet = get_current_poet()
+    return jsonify(message=f'You are (almost) welcomed here, dear poet(esse) with ID {poet}. 🍸'), 200
 
 
 @routes.route('/poem-types', methods=['GET'])
@@ -59,16 +59,17 @@ def submit_poem():
         - Returns a JSON response with the poem details or error message.
     """
     try:
-        # Get current logged-in poet's email from JWT token
-        poet_email = get_jwt_identity()
-
         # Find the poet by their email (whoch is stored in the token)
-        poet = Poet.query.filter_by(email=poet_email).first()
+        poet = get_current_poet()
         if not poet:
             return jsonify({'error': 'Poet not found.'}), 404
+        
+        print('i am here')
 
         # Validate incoming JSON data using PoemCreate Pydantic model
         poem_data = PoemCreate(**request.json)
+
+        print(poem_data)
 
         # Create and save the poem to the database
         new_poem = Poem(
@@ -77,10 +78,14 @@ def submit_poem():
             is_collaborative=poem_data.is_collaborative,
             poet_id=poet.id  # Associate the poem with the currently logged-in poet
         )
+
+        print(new_poem)
+
         db.session.add(new_poem)
         db.session.commit()
         db.session.refresh(new_poem)
 
+        print(new_poem)
 
         # Manually print the new_poem fields
         print("New Poem created:", new_poem.id, new_poem.title, new_poem.created_at)
@@ -110,8 +115,10 @@ def submit_individual_poem():
     """
     This route handles the full submission of a single, complete poem by one poet.
     """
-    poet_identity = get_jwt_identity()
-    poet_id = poet_identity['poet_id']
+    jwt_identity = get_jwt_identity()  # Returns a dictionary with both poet_id and email
+
+    # Extract poet_id and email from the identity stored in the JWT token
+    poet_id = jwt_identity.get('poet_id')
 
     try:
         # Validate and create the individual poem
@@ -139,21 +146,22 @@ def submit_collaborative_contribution():
     """
     This route handles the contribution of lines to a collaborative poem, with validation for contribution rules and poem progression.
     """
-    poet_email = get_jwt_identity()  # Returns the email (not poet_id)
-    
+    jwt_identity = get_jwt_identity()  # Returns a dictionary with both poet_id and email
+
+    # Extract poet_id and email from the identity stored in the JWT token
+    poet_id = jwt_identity.get('poet_id')
+    if not poet_id:
+        return jsonify({'error': 'Invalid token data. Please log in again.'}), 401
+
     try:
-        # Fetch poet object using the email
-        poet = get_poet_by_email(poet_email)  # This function should look up the poet in the database
-        poet_id = poet.id  # Now we have the poet_id
         # Validate the incoming data using the PoemDetailsCreate schema
         poem_details_data = PoemDetailsCreate(**request.json)
 
         poem = get_poem_by_id(poem_details_data.poem_id)
+
         if not poem:
+            logging.error('Poem not found when fetching by ID.')
             return jsonify({'error': 'Poem not found.'}), 404
-        
-        # Log the submission attempt
-        logging.info(f"Poet {poet_email} (ID: {poet_id}) is submitting content for poem {poem.id}.")
 
         # Authorization: Ensure the user is allowed to submit content for this poem
         if not is_authorized_poet(poem, poet_id):
@@ -168,6 +176,10 @@ def submit_collaborative_contribution():
     except ValidationError as e:
         logging.error(f"Validation error: {e.errors()}")
         return jsonify({'errors': e.errors()}), 400
+    
+    except ValueError as e:
+        logging.error(f"Error: {str(e)}")
+        return jsonify({'error': str(e)}), 404
 
     except Exception as e:
         logging.error(f"Error submitting collaborative contribution: {str(e)}")

@@ -49,9 +49,11 @@ def get_poem_by_id(poem_id):
 
 def get_poem_contributions(poem_id):
     """
-    Fetch all contributions for a specific poem.
+    Fetch the actual contribution lines for a specific poem.
     """
-    return PoemDetails.query.filter_by(poem_id=poem_id).all() 
+    contributions = PoemDetails.query.filter_by(poem_id=poem_id).all()
+    return contributions
+
 
 def get_last_contribution(poem_id):
     """
@@ -81,19 +83,14 @@ def fetch_all_poem_lines(poem_id):
     return all_lines
 
 
-def prepare_full_poem(current_poem_content, poem_id):
+def prepare_full_poem(existing_contributions, current_poem_content, poem_id):
     """
     Prepare the full poem so far including all previous contributions and the new one.
-    This fetches the lines already contributed to the poem.
-    The new line is concatenated with the existing content to form the complete poem preview.
-    Use .strip() to remove any extra whitespace or newline characters. 
-    Also, if previous_lines is empty (for new poems), the result is just the new content.
     """
-    # Fetch the existing lines
-    previous_lines = fetch_all_poem_lines(poem_id)
-    
-    # Combine the previous lines with the current contribution
-    full_poem = f"{previous_lines.strip()}\n{current_poem_content.strip()}" if previous_lines else current_poem_content.strip()
-    
-    # Return the full poem so far
-    return full_poem
+    if isinstance(existing_contributions, int):
+        if existing_contributions > 0:
+            # Fetch and return all lines without appending the current content
+            return fetch_all_poem_lines(poem_id)
+        return current_poem_content
+    else:
+        raise ValueError(f"Unexpected type for existing_contributions: {type(existing_contributions)}")

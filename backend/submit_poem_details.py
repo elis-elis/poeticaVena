@@ -2,14 +2,15 @@
 This file handles the overall submission process for individual and collaborative poems.
 """
 
-from flask import jsonify
+from flask import jsonify, request
 from .database import db
 from .models import PoemDetails
-from .schemas import PoemDetailsResponse
+from .schemas import PoemDetailsResponse, PoemDetailsCreate
 from .poem_utils import get_poem_type_by_id, get_poem_contributions
 from backend.poetry_validators.free_verse import handle_free_verse
 from backend.poetry_validators.haiku import handle_haiku
 from backend.poetry_validators.nonet import handle_nonet
+import logging
 
 
 def is_authorized_poet(poem, authenticated_poet_id):
@@ -35,6 +36,8 @@ def save_poem_details(poem_details_data):
         poet_id=poem_details_data.poet_id,
         content=poem_details_data.content
     )
+
+    print(f"Inside save_poem_details: {poem_details_data}, type: {type(poem_details_data)}")
 
     db.session.add(poem_details)
     db.session.commit()
@@ -71,8 +74,12 @@ def process_collaborative_poem(poem, poem_details_data, poet_id):
     """
     # Step 1: Fetch and validate the poem type
     poem_type = get_poem_type_by_id(poem.poem_type_id)
+    print(f"Poem type retrieved: {poem_type.name if poem_type else 'None'}")
+
     if not poem_type:
         return jsonify({'error': 'Poem type was not found. ⚡️'}), 404
+
+    print(f"Is the poem published? {'Yes' if poem.is_published else 'No'}")
 
     # Step 2: Check if the poem is already completed (published)
     if poem.is_published:
@@ -81,6 +88,9 @@ def process_collaborative_poem(poem, poem_details_data, poet_id):
     # Step 3: Fetch existing contributions
     existing_contributions = get_poem_contributions(poem.id)
     current_poem_content = poem_details_data.content
+
+
+    print(f"Delegating to handler for poem type: {poem_type.name}")
 
     # Delegate control to specific poem type handlers (Haiku, Free Verse, etc.)
     if poem_type.name == "Free Verse":

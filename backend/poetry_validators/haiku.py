@@ -12,7 +12,7 @@ def validate_haiku_max_lines(existing_contributions):
     Validate that Haiku can only have 3 lines.
     """
     max_allowed_lines = 3
-    if existing_contributions + 1 > max_allowed_lines:
+    if len(existing_contributions) >= max_allowed_lines:
         return jsonify({'error': 'Haiku can only have 3 lines in total. 🌿'}), 400
     return None
 
@@ -58,8 +58,11 @@ def handle_haiku(existing_contributions, current_poem_content, poem, poem_detail
     """
     from backend.submit_poem_details import save_poem_details
 
+    print('i am here')
+
     # Check for consecutive contributions
     consecutive_error = validate_consecutive_contributions(existing_contributions, poet_id, poem.id)
+    
     if consecutive_error:
         return consecutive_error
     
@@ -71,6 +74,9 @@ def handle_haiku(existing_contributions, current_poem_content, poem, poem_detail
     # Combine all previous lines (for presentation purposes, not validation)
     previous_lines = fetch_all_poem_lines(poem.id)
 
+    print(f"Previous lines fetched: {previous_lines}")
+
+
     # Validate the poem using AI (this checks all lines so far)
     validation_error = validate_haiku(current_poem_content, previous_lines)
     if validation_error:
@@ -80,8 +86,12 @@ def handle_haiku(existing_contributions, current_poem_content, poem, poem_detail
     poem_details = save_poem_details(poem_details_data)
     full_poem_so_far = prepare_full_poem(existing_contributions, current_poem_content, poem.id)
 
+
+    print(f"existing_contributions: {existing_contributions}, type: {type(existing_contributions)}")
+    print(f"full_poem_so_far: {full_poem_so_far}")
+
     # Check if the Haiku is complete (3 lines in total)
-    if existing_contributions + 1 == 3:
+    if len(existing_contributions) + 1 == 3:
         poem.is_published = True
         db.session.commit()
         return jsonify({'message': 'Haiku is now completed and published. 🌸'}), 201
@@ -92,5 +102,5 @@ def handle_haiku(existing_contributions, current_poem_content, poem, poem_detail
         'message': 'Contribution accepted! 🌱',
         'poem_details': poem_details_response.model_dump(),
         'full_poem': full_poem_so_far,
-        'next_step': 'Complete the Haiku with one more line.' if existing_contributions + 1 < 3 else 'This Haiku is now complete and it reads good.'
+        'next_step': 'Complete the Haiku with one more line.' if len(existing_contributions) + 1 < 3 else 'This Haiku is now complete and it reads good.'
     }), 201
