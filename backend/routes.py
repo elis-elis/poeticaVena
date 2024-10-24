@@ -59,7 +59,8 @@ def submit_poem():
     """
     try:
         # Get current logged-in poet's email from JWT token
-        poet_email = get_jwt_identity()
+        poet_identity = get_jwt_identity()
+        poet_email = poet_identity['email']  # Extract poet_id from the JWT payload
 
         # Find the poet by their email (whoch is stored in the token)
         poet = Poet.query.filter_by(email=poet_email).first()
@@ -109,7 +110,8 @@ def submit_individual_poem():
     """
     This route handles the full submission of a single, complete poem by one poet.
     """
-    poet_id = get_jwt_identity()
+    poet_identity = get_jwt_identity()
+    poet_id = poet_identity['poet_id']
 
     try:
         # Validate and create the individual poem
@@ -117,12 +119,18 @@ def submit_individual_poem():
         return process_individual_poem(poem_data, poet_id)
     
     except ValidationError as e:
-        return jsonify({'errors': e.errors()}), 400
+        logging.error(f"Validation Error: {e.errors()}")
+        return jsonify({'status': 'error', 'message': 'Validation failed', 'errors': e.errors()}), 400
+    
+    #except SQLAlchemyError as db_error:
+        #logging.error(f"Database error for poet {poet_id} with poem {poem_data.dict()}: {str(db_error)}")
+        #db.session.rollback()
+        #return jsonify({'status': 'error', 'message': 'A database error occurred.'}), 500
     
     except Exception as e:
         logging.error(f"Error submitting individual poem: {str(e)}")
         db.session.rollback()
-        return jsonify({'error': f'An error occurred: {str(e)}'}), 500
+        return jsonify({'status': 'error', 'message': f'An error occurred: {str(e)}'}), 500
 
 
 @routes.route('/submit-collab-contribution', methods=['POST'])
@@ -131,7 +139,8 @@ def submit_collaborative_contribution():
     """
     This route handles the contribution of lines to a collaborative poem, with validation for contribution rules and poem progression.
     """
-    poet_id = get_jwt_identity()
+    poet_identity = get_jwt_identity()
+    poet_id = poet_identity['poet_id']  # Extract poet_id from the JWT payload
 
     try:
         # Validate the incoming data using the PoemDetailsCreate schema
