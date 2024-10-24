@@ -35,7 +35,7 @@ def fetch_haiku_validation_from_ai(poem_line, line_number):
     - Third line: 5 syllables
 
     If the line follows this structure for the specified line number, respond with 'Pass'.
-    If it does not, respond with 'Fail' and explain the discrepancy.
+    If it does not, respond with 'Fail' and concisely explain the syllable count issue.
     """
 
     return make_ai_request(prompt)
@@ -55,7 +55,7 @@ def fetch_nonet_validation_from_ai(poem_line, line_number):
     Expected syllables: {expected_syllables}
 
     If the line has the correct number of syllables, respond with 'Pass'.
-    If it does not, respond with 'Fail' and explain the syllable count issue.
+    If it does not, respond with 'Fail' and concisely explain the syllable count issue.
     """
 
     return make_ai_request(prompt)
@@ -71,7 +71,6 @@ def make_ai_request(prompt):
             model="gpt-4o-mini",
             messages=messages,
             temperature=0.3,
-            max_tokens=100
         )
 
         choices = response.choices
