@@ -1,11 +1,12 @@
 from flask import Blueprint, request, jsonify, make_response
 from .database import db
 from werkzeug.security import generate_password_hash, check_password_hash
-from flask_jwt_extended import create_access_token, create_refresh_token, jwt_required, get_jwt_identity, get_jwt
+from flask_jwt_extended import create_access_token, create_refresh_token, jwt_required, get_jwt_identity
 from .models import Poet
 from .schemas import PoetCreate, PoetResponse
 from datetime import timedelta
 from pydantic import ValidationError
+from .poet_utils import get_current_poet
 
 
 auth = Blueprint('auth', __name__)
@@ -25,8 +26,8 @@ def login():
     # Find poet by email
     poet = Poet.query.filter_by(email=email).first()
     if poet and check_password_hash(poet.password_hash, password):
-        access_token = create_access_token(identity={'poet_id': poet.id, 'email': poet.email}, expires_delta=timedelta(hours=1))
-        refresh_token = create_refresh_token(identity=poet.email)
+        access_token = create_access_token(identity={'poet_id': poet.id}, expires_delta=timedelta(hours=1))
+        refresh_token = create_refresh_token(identity=poet.id)
 
         # Create a response with the access token in the body
         response = make_response(jsonify(access_token=access_token, token_type="bearer"), 200)
@@ -53,7 +54,7 @@ def login():
 @jwt_required()
 def fetch_poet():
     current_user = get_jwt_identity()
-    poet = Poet.query.filter_by(email=current_user).first()
+    poet = Poet.query.filter_by(id=current_user['poet_id']).first()
     poet_response = PoetResponse.model_validate(poet)
 
     return jsonify(poet_response.model_dump()), 201
@@ -68,8 +69,14 @@ def refresh():
     when the previous one has expired, enabling smooth and continuous authentication 
     without forcing the poet to log in repeatedly.
     """
-    current_user = get_jwt_identity()   # Get the current poet from the refresh token
-    new_access_token = create_access_token(identity=current_user, expires_delta=timedelta(hours=1))
+    # Fetch the poet by email to get the poet_id (using the function we created)
+    poet = get_current_poet()
+    if not poet:
+        return jsonify({'error': 'Poet not found.'}), 404
+
+    # Generate a new access token with both poet_id and email in the identity
+    new_access_token = create_access_token(identity={'poet_id': poet.id}, expires_delta=timedelta(hours=1))
+
     return jsonify(access_token=new_access_token), 200
 
 
