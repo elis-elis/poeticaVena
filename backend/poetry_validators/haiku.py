@@ -78,10 +78,10 @@ def handle_haiku(existing_contributions, current_poem_content, poem, poem_detail
 
     # Save the contribution after passing AI validation
     poem_details = save_poem_details(poem_details_data)
-    full_poem_so_far = prepare_full_poem(current_poem_content, poem.id)
+    full_poem_so_far = prepare_full_poem(existing_contributions, current_poem_content, poem.id)
 
     # Check if the Haiku is complete (3 lines in total)
-    if len(existing_contributions) + 1 == 3:
+    if existing_contributions + 1 == 3:
         poem.is_published = True
         db.session.commit()
         return jsonify({'message': 'Haiku is now completed and published. 🌸'}), 201

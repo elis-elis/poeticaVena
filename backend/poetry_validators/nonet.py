@@ -77,10 +77,10 @@ def handle_nonet(existing_contributions, current_poem_content, poem, poem_detail
 
     # Save the contribution after passing validation
     poem_details = save_poem_details(poem_details_data)
-    full_poem_so_far = prepare_full_poem(current_poem_content, poem.id)
+    full_poem_so_far = prepare_full_poem(existing_contributions, current_poem_content, poem.id)
 
     # Check if the Nonet is now complete (9 lines in total)
-    if len(existing_contributions) + 1 == 9:
+    if existing_contributions + 1 == 9:
         poem.is_published = True
         db.session.commit()
         return jsonify({'message': 'Nonet is now completed and published. 🌸'}), 201

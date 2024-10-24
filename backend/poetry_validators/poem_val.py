@@ -41,16 +41,15 @@ def validate_max_lines(poem_type, existing_contributions):
 
 def validate_consecutive_contributions(existing_contributions, poet_id, poem_id):
     """
-    Check if the last contribution was made by the same poet.
-    If the same poet tries to contribute twice in a row, it returns an error, stopping further processing.
+    Validates that the same poet cannot make two consecutive contributions to the same poem.
     """
-    if existing_contributions == 0:
-        return None     # No previous contributions, so no need to check
-    
-    if existing_contributions > 0:
-        last_contribution = get_last_contribution(poem_id)
-        if last_contribution.poet_id and last_contribution.poet_id == poet_id:
-            logging.warning(f"Consecutive contribution attempt by poet {poet_id} detected.")
-            return jsonify({'error': 'You cannot contribute consecutive lines. 🦖'}), 400
-        
+    if not existing_contributions:
+        return None  # No contributions yet, so it's valid
+
+    last_contribution = existing_contributions[-1]
+
+    # Check if the last contribution was made by the same poet
+    if last_contribution.poet_id == poet_id:
+        return jsonify({'error': 'You cannot contribute twice in a row to the same poem. 🌵'}), 400
+
     return None
