@@ -6,6 +6,7 @@ from .database import db
 from .schemas import PoemCreate, PoemTypeResponse, PoemResponse, PoemDetailsCreate
 from .submit_poem_details import process_individual_poem, process_collaborative_poem, is_authorized_poet
 from .poem_utils import get_poem_by_id
+from .poet_utils import get_poet_by_email
 import logging
 from flask_jwt_extended.exceptions import JWTDecodeError
 
@@ -59,8 +60,7 @@ def submit_poem():
     """
     try:
         # Get current logged-in poet's email from JWT token
-        poet_identity = get_jwt_identity()
-        poet_email = poet_identity['email']  # Extract poet_id from the JWT payload
+        poet_email = get_jwt_identity()
 
         # Find the poet by their email (whoch is stored in the token)
         poet = Poet.query.filter_by(email=poet_email).first()
@@ -139,10 +139,12 @@ def submit_collaborative_contribution():
     """
     This route handles the contribution of lines to a collaborative poem, with validation for contribution rules and poem progression.
     """
-    poet_identity = get_jwt_identity()
-    poet_id = poet_identity['poet_id']  # Extract poet_id from the JWT payload
-
+    poet_email = get_jwt_identity()  # Returns the email (not poet_id)
+    
     try:
+        # Fetch poet object using the email
+        poet = get_poet_by_email(poet_email)  # This function should look up the poet in the database
+        poet_id = poet.id  # Now we have the poet_id
         # Validate the incoming data using the PoemDetailsCreate schema
         poem_details_data = PoemDetailsCreate(**request.json)
 
@@ -151,7 +153,7 @@ def submit_collaborative_contribution():
             return jsonify({'error': 'Poem not found.'}), 404
         
         # Log the submission attempt
-        logging.info(f"Poet {poet_id} is submitting content for poem {poem.id}.")
+        logging.info(f"Poet {poet_email} (ID: {poet_id}) is submitting content for poem {poem.id}.")
 
         # Authorization: Ensure the user is allowed to submit content for this poem
         if not is_authorized_poet(poem, poet_id):
