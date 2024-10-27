@@ -1,12 +1,30 @@
 from .models import Poem, PoemType, PoemDetails
-import nltk
-from nltk.corpus import cmudict
+#import nltk
+#from nltk.corpus import cmudict
 import re
 
 # Load the CMU Pronouncing Dictionary
-nltk.download('cmudict')
-d = cmudict.dict()
+# nltk.download('cmudict')
+# d = cmudict.dict()
 
+
+def validate_line_syllables(line, line_num):
+    syllables = line.strip().split(" ")
+    if line_num == 1:
+        if len(syllables) == 5:
+            return 'Pass'
+        return 'Fail'
+    elif line_num == 2:
+        if len(syllables) == 7:
+            return 'Pass'
+        return 'Fail'
+    elif line_num == 3:
+        if len(syllables) == 5:
+            return 'Pass'
+        return 'Fail'
+    else:
+        return 'Fail'
+    
 
 def nltk_syllable_count(word):
     """
@@ -30,6 +48,9 @@ def count_syllables_in_line(line):
     """
     words = re.findall(r'\b\w+\b', line.lower())  # Extract words from the line
     syllable_count = sum(nltk_syllable_count(word) for word in words)
+
+    print(f"Line: \"{line}\", Words: {words}, Total Syllables: {syllable_count}")
+
     return syllable_count
 
 
@@ -49,10 +70,9 @@ def get_poem_by_id(poem_id):
 
 def get_poem_contributions(poem_id):
     """
-    Fetch the actual contribution lines for a specific poem.
+    Count how many contributions exist for a specific poem.
     """
-    contributions = PoemDetails.query.filter_by(poem_id=poem_id).all()
-    return contributions
+    return PoemDetails.query.filter_by(poem_id=poem_id).count() or 0
 
 
 def get_last_contribution(poem_id):
@@ -62,13 +82,19 @@ def get_last_contribution(poem_id):
     return PoemDetails.query.filter_by(poem_id=poem_id).order_by(PoemDetails.submitted_at.desc()).first()
 
 
+def fetch_all_poem_lines_other(poem_id):
+    """
+    Fetches and concatenates all existing lines for a collaborative poem.
+    """
+    # Query the database for all poem details (lines) in the order they were submitted
+    return PoemDetails.query.filter_by(poem_id=poem_id).order_by(PoemDetails.submitted_at.asc()).all()
+
+
 def fetch_all_poem_lines(poem_id):
     """
     Fetches and concatenates all existing lines for a collaborative poem.
-
     Args:
         poem_id: The ID of the poem for which to fetch lines.
-
     Returns:
         A string containing all the lines of the poem, concatenated with line breaks.
     """
@@ -78,8 +104,8 @@ def fetch_all_poem_lines(poem_id):
     # Extract the 'content' field from each PoemDetails record and join them with newlines
     all_lines = ""
     for detail in poem_lines:
-        all_lines += detail.content + '\n'
-        
+        all_lines += detail.content
+
     return all_lines
 
 
