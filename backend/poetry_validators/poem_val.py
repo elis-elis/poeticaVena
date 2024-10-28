@@ -30,20 +30,23 @@ def validate_max_lines(poem_type, existing_contributions):
     If adding another line would surpass the poem’s line limit, it stops the process and returns an error.
     """
     max_allowed_lines = poem_type.criteria.get('max_lines', None)
+    # Check if max lines is defined in criteria
     if max_allowed_lines is None:
         return jsonify({'error': 'Poem type criteria missing max_lines definition. ⚡️'}), 500
     
+    # Check if adding another line would exceed max lines
     if len(existing_contributions) + 1 > max_allowed_lines:
         return jsonify({'error': f'This poem has already reached the maximum number of {max_allowed_lines} lines. 🌿'}), 400
 
-    return max_allowed_lines
+    # Return as a tuple: the max allowed lines and a status code 200
+    return {'max_allowed_lines': max_allowed_lines}, 200
 
 
 def validate_consecutive_contributions(existing_contributions, poet_id, poem_id):
     """
     Validates that the same poet cannot make two consecutive contributions to the same poem.
     """
-    if not existing_contributions or len(existing_contributions) == 0:
+    if not existing_contributions:
         return None
 
     last_contribution = get_last_contribution(poem_id)
