@@ -1,57 +1,50 @@
 from .models import Poem, PoemType, PoemDetails
-#import nltk
-#from nltk.corpus import cmudict
-import re
-
-# Load the CMU Pronouncing Dictionary
-# nltk.download('cmudict')
-# d = cmudict.dict()
+# import re
 
 
-def validate_line_syllables(line, line_num):
-    """
-    Validates the syllable count in a line by counting vowel groups as syllables.
-    """
-    # Count syllables based on vowel groups in each word
-    syllable_count = sum(len(re.findall(r'[aeiouy]+', word.lower())) for word in line.strip().split())
-
-    # Check syllable count based on the line number in the Haiku
-    if line_num == 1 and syllable_count == 5:
-        return 'Pass'
-    elif line_num == 2 and syllable_count == 7:
-        return 'Pass'
-    elif line_num == 3 and syllable_count == 5:
-        return 'Pass'
-    else:
-        return f'Fail - The line has {syllable_count} syllables instead of the required {5 if line_num in [1, 3] else 7}.'
+def count_syllables(line):
+    line = line.lower().strip()
+    if line == "":
+        return 0
     
+    # Replace common silent letters
+    line = line.replace("e ", " ")
+    line = line.replace("e,", " ")
+    line = line.replace("ed ", " ")
+    line = line.replace("ed,", " ")
 
-def nltk_syllable_count(word):
-    """
-    Uses the CMU Pronouncing Dictionary to count syllables in a word.
-    If the word is not found, a regex-based estimate is returned.
-    """
-    word = word.lower()
-    
-    if word in d:
-        # If the word is found, get syllable count from the first pronunciation in the dictionary
-        return max([len([syl for syl in pronunciation if syl[-1].isdigit()]) for pronunciation in d[word]])
-    else:
-        # If word not found in CMU dictionary, fallback to rough syllable count using regex.
-        # This counts vowels and assumes one vowel = one syllable.
-        return len(re.findall(r'[aeiouy]+', word.lower()))
-    
+    vowels = "aeiouy"
+    syllable_count = 0
+    is_prev_char_vowel = False
 
-def count_syllables_in_line(line):
-    """
-    Count syllables in an entire line by splitting it into words and counting syllables in each word.
-    """
-    words = re.findall(r'\b\w+\b', line.lower())  # Extract words from the line
-    syllable_count = sum(nltk_syllable_count(word) for word in words)
+    for char in line:
+        if char in vowels:
+            if not is_prev_char_vowel:
+                syllable_count += 1
+                is_prev_char_vowel = True
+        else:
+            is_prev_char_vowel = False
 
-    print(f"Line: \"{line}\", Words: {words}, Total Syllables: {syllable_count}")
+    # Handle special cases
+    if line.endswith('e'):
+        syllable_count -= 1
+
+    # Ensure at least one syllable
+    syllable_count = max(syllable_count, 1)
 
     return syllable_count
+
+
+def validate_haiku_line(line, line_number):
+    expected_syllables = [5, 7, 5]
+    syllable_count = count_syllables(line)
+
+    print(f"Validating line '{line}': Found {syllable_count} syllables (expected {expected_syllables[line_number - 1]})")
+
+    if syllable_count == expected_syllables[line_number - 1]:
+        return "Pass"
+    else:
+        return f'Fail: The line "{line}" has {syllable_count} syllables (expected {expected_syllables[line_number - 1]}).'
 
 
 def get_poem_type_by_id(poem_type_id):
@@ -70,9 +63,9 @@ def get_poem_by_id(poem_id):
 
 def get_poem_contributions(poem_id):
     """
-    Count how many contributions exist for a specific poem.
+    Retrieve all contributions (lines) for a specific poem.
     """
-    return PoemDetails.query.filter_by(poem_id=poem_id).count() or 0
+    return PoemDetails.query.filter_by(poem_id=poem_id).all()
 
 
 def get_last_contribution(poem_id):
@@ -80,14 +73,6 @@ def get_last_contribution(poem_id):
     Fetch the most recent contribution to a collaborative poem.
     """
     return PoemDetails.query.filter_by(poem_id=poem_id).order_by(PoemDetails.submitted_at.desc()).first()
-
-
-def fetch_all_poem_lines_other(poem_id):
-    """
-    Fetches and concatenates all existing lines for a collaborative poem.
-    """
-    # Query the database for all poem details (lines) in the order they were submitted
-    return PoemDetails.query.filter_by(poem_id=poem_id).order_by(PoemDetails.submitted_at.asc()).all()
 
 
 def fetch_all_poem_lines(poem_id):
@@ -107,10 +92,15 @@ def prepare_full_poem(existing_contributions, current_poem_content, poem_id):
     """
     Prepare the full poem so far including all previous contributions and the new one.
     """
-    if isinstance(existing_contributions, int):
-        if existing_contributions > 0:
-            all_lines = fetch_all_poem_lines(poem_id)
-            return ", ".join(all_lines + [current_poem_content.strip()])
-        return current_poem_content.strip()
-    else:
+    # Ensure existing_contributions is a list of lines
+    if not isinstance(existing_contributions, list):
         raise ValueError(f"Unexpected type for existing_contributions: {type(existing_contributions)}")
+    
+    # Fetch all previous lines from the poem and split them into a list
+    all_lines = fetch_all_poem_lines(poem_id).splitlines()
+
+    # Add the new content to the list
+    full_poem_lines = all_lines + [current_poem_content.strip()]
+
+    # Join all lines with newlines to form the full poem text
+    return "\n".join(full_poem_lines)

@@ -11,7 +11,7 @@ def validate_free_verse(current_poem_content):
     return None
 
 
-def handle_free_verse(current_poem_content, poem, poem_details_data, poet_id):
+def handle_free_verse(existing_contributions, current_poem_content, poem, poem_details_data, poet_id):
     """
     Handle contributions for Free Verse poems, which have no specific structural validation.
     """
@@ -21,7 +21,7 @@ def handle_free_verse(current_poem_content, poem, poem_details_data, poet_id):
     poem_details_response = PoemDetailsResponse.model_validate(poem_details)
 
     # Prepare the full poem using the list of existing contributions
-    full_poem_so_far = prepare_full_poem(current_poem_content, poem.id)
+    full_poem_so_far = prepare_full_poem(existing_contributions, current_poem_content, poem.id)
 
     return jsonify({
         'message': 'Contribution accepted and published! 🌱',

@@ -64,8 +64,6 @@ def submit_poem():
         if not poet:
             return jsonify({'error': 'Poet not found.'}), 404
         
-        print('i am here')
-
         # Validate incoming JSON data using PoemCreate Pydantic model
         poem_data = PoemCreate(**request.json)
 
@@ -79,13 +77,9 @@ def submit_poem():
             poet_id=poet.id  # Associate the poem with the currently logged-in poet
         )
 
-        print(new_poem)
-
         db.session.add(new_poem)
         db.session.commit()
         db.session.refresh(new_poem)
-
-        print(new_poem)
 
         # Manually print the new_poem fields
         print("New Poem created:", new_poem.id, new_poem.title, new_poem.created_at)
@@ -146,9 +140,9 @@ def submit_collaborative_contribution():
     """
     This route handles the contribution of lines to a collaborative poem, with validation for contribution rules and poem progression.
     """
-    jwt_identity = get_jwt_identity()  # Returns a dictionary with both poet_id and email
+    jwt_identity = get_jwt_identity()
 
-    # Extract poet_id and email from the identity stored in the JWT token
+    # Extract poet_id from the identity stored in the JWT token
     poet_id = jwt_identity.get('poet_id')
     if not poet_id:
         return jsonify({'error': 'Invalid token data. Please log in again.'}), 401
@@ -158,6 +152,7 @@ def submit_collaborative_contribution():
         poem_details_data = PoemDetailsCreate(**request.json)
 
         poem = get_poem_by_id(poem_details_data.poem_id)
+        print(f'this is a poem from collab contributions:', poem, poem_details_data.poem_id)
 
         if not poem:
             logging.error('Poem not found when fetching by ID.')

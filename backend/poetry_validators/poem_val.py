@@ -56,4 +56,21 @@ def validate_consecutive_contributions(existing_contributions, poet_id, poem_id)
         return jsonify({'error': 'You cannot contribute twice in a row to the same poem. 🌵'}), 400
 
     return None
+
+
+def validate_consecutive_contributions_new(existing_contributions, poet_id, poem_id):
+    """
+    Ensure that the same poet cannot contribute twice in a row to a poem.
+    """
+    # Check if there are any prior contributions
+    if not existing_contributions:
+        return None  # No contributions yet, so no error
     
+    # Fetch the last contributor's ID
+    last_contribution = existing_contributions[-1]  # Assuming this list is in order of contribution
+
+    # Check if the last contributor is the same as the current poet
+    if last_contribution.poet_id == poet_id:
+        return jsonify({'error': 'Consecutive contributions by the same poet are not allowed. 🌱'}), 400
+    
+    return None  # No consecutive contribution violation

@@ -28,6 +28,7 @@ class Poem(db.Model):
     updated_at = db.Column(db.DateTime(timezone=True), onupdate=func.now())
     # One-to-one or one-to-many relationship with PoemDetails
     poem_details = db.relationship('PoemDetails', backref='poem', lazy=True, passive_deletes=True)
+    # user = db.relationship("Poet", back_populates="user_poems")
 
 
 class PoemType(db.Model):
