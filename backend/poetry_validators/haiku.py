@@ -1,6 +1,6 @@
 from backend.database import db
 from flask import jsonify
-from backend.ai_val import fetch_haiku_validation_from_ai, fetch_poem_validation_from_ai, fetch_poem_validation_from_nltk
+from backend.ai_val import fetch_haiku_validation_from_ai, fetch_poem_validation_from_ai
 from backend.models import PoemDetails
 from backend.poem_utils import fetch_all_poem_lines, get_last_contribution, get_poem_by_id, get_poem_contributions, validate_line_syllables
 from backend.poem_utils import prepare_full_poem
@@ -42,7 +42,7 @@ def validate_haiku(current_poem_content, previous_lines):
     print(f"Validating line: '{current_poem_content}', line number: {current_line_number}")
 
     # Fetch AI validation for the current line only
-    validation_response = fetch_haiku_validation_from_ai(current_poem_content, current_line_number)
+    validation_response = fetch_poem_validation_from_ai(current_poem_content, current_line_number)
 
     # Return an error if the validation fails
     if "Fail" in validation_response:
@@ -52,45 +52,58 @@ def validate_haiku(current_poem_content, previous_lines):
     return None
 
 
-def handle_haiku(existing_contributions, current_poem_content, poem, poem_details_data, poet_id):
+def validate_haiku_line_with_fallback(line, line_num):
     """
-    Handle contributions for Haiku poems using AI validation.
+    Attempts to validate a Haiku line using AI. If it fails, falls back to approximate syllable count.
+    """
+    # Step 1: Use AI to validate the line
+    validation_response = fetch_poem_validation_from_ai(line, line_num, poem_type_id=1)
+
+    # If AI validation fails, use the fallback syllable counter
+    if "Fail" in validation_response:
+        # Use the fallback syllable count validation
+        fallback_response = validate_line_syllables(line, line_num)
+        return fallback_response
+
+    return validation_response
+
+
+def handle_haiku_new(existing_contributions, current_poem_content, poem, poem_details_data, poet_id):
+    """
+    Handle contributions for Haiku poems, ensuring the syllable structure is maintained.
     """
     from backend.submit_poem_details import save_poem_details
-
-    # Combine all previous lines (for presentation purposes, not validation)
-    # previous_lines = fetch_all_poem_lines(poem.id)
-
-    # print(f"Previous lines fetched: {previous_lines}")
-
-    # Check for consecutive contributions
-    consecutive_error = validate_consecutive_contributions(existing_contributions, poet_id, poem.id)    # consecutive_error class tuple
-
-    if consecutive_error:
-        return consecutive_error
     
-    # Validate max lines for Haiku
-    max_lines_error = validate_haiku_max_lines(existing_contributions)
-    if max_lines_error:
-        return max_lines_error
+    # Combine all previous lines (for presentation purposes, not validation)
+    previous_lines = fetch_all_poem_lines(poem.id)
 
-    # Validate the poem using AI (this checks all lines so far)
-    validation_error = validate_haiku_new(poem, current_poem_content)
-    if validation_error:
-        return validation_error
+    # Determine the current line number (Haikus should have 3 lines max)
+    combined_lines = previous_lines.strip().split('\n') + [current_poem_content.strip()]
+    line_number = len(combined_lines)
 
-    # Save the contribution after passing AI validation
+    # Debug: Confirm correct lines and count
+    print(f"Combined lines (total {len(combined_lines)}): {combined_lines}")
+
+    # Debug: Print details of the line being validated
+    print(f"Previous lines: '{previous_lines}', line number: {line_number}")
+
+    if line_number > 3:
+        return jsonify({'error': 'Haiku can only have 3 lines in total. ⚡️'}), 400
+
+    # Validate the current line based on the line number
+    validation_response = validate_haiku_line_with_fallback(current_poem_content, line_number)
+    if "Fail" in validation_response:
+        return jsonify({'error': f'Line {line_number} failed validation. 🌦 Reason: {validation_response}'}), 400
+
+    # Save the contribution after passing validation
     poem_details = save_poem_details(poem_details_data)
     full_poem_so_far = prepare_full_poem(existing_contributions, current_poem_content, poem.id)
 
-    print(f"existing_contributions: {existing_contributions}, type: {type(existing_contributions)}")
-    print(f"full_poem_so_far: {full_poem_so_far}")
-
-    # Check if the Haiku is complete (3 lines in total)
-    if existing_contributions + 1 == 3:
+    # Check if the Haiku is now complete (3 lines in total)
+    if len(combined_lines) == 3:
         poem.is_published = True
         db.session.commit()
-        return jsonify({'message': 'Haiku is now completed and published. 🌸'}), 201
+        return jsonify({'message': 'Haiku is now completed and published. 🌸', 'full_poem': full_poem_so_far}), 201
 
     # Return the poem details along with the full poem so far
     poem_details_response = PoemDetailsResponse.model_validate(poem_details)
@@ -98,11 +111,11 @@ def handle_haiku(existing_contributions, current_poem_content, poem, poem_detail
         'message': 'Contribution accepted! 🌱',
         'poem_details': poem_details_response.model_dump(),
         'full_poem': full_poem_so_far,
-        'next_step': 'Complete the Haiku with one more line.' if existing_contributions + 1 < 3 else 'This Haiku is now complete and it reads good.'
+        'next_step': 'Complete the Haiku with one more line.'
     }), 201
 
 
-def handle_haiku_old(existing_contributions, current_poem_content, poem, poem_details_data, poet_id):
+def handle_haiku(existing_contributions, current_poem_content, poem, poem_details_data, poet_id):
     """
     Handle contributions for Haiku poems, ensuring the syllable structure is maintained.
     """
@@ -111,7 +124,7 @@ def handle_haiku_old(existing_contributions, current_poem_content, poem, poem_de
     previous_lines = fetch_all_poem_lines(poem.id)
 
     # Validate the Haiku structure (5-7-5 syllables and 3 lines max)
-    validation_error = validate_haiku(current_poem_content, previous_lines)
+    validation_error = validate_haiku_line_with_fallback()
     if validation_error:
         return validation_error
 

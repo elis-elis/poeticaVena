@@ -9,21 +9,21 @@ import re
 
 
 def validate_line_syllables(line, line_num):
-    syllables = line.strip().split(" ")
-    if line_num == 1:
-        if len(syllables) == 5:
-            return 'Pass'
-        return 'Fail'
-    elif line_num == 2:
-        if len(syllables) == 7:
-            return 'Pass'
-        return 'Fail'
-    elif line_num == 3:
-        if len(syllables) == 5:
-            return 'Pass'
-        return 'Fail'
+    """
+    Validates the syllable count in a line by counting vowel groups as syllables.
+    """
+    # Count syllables based on vowel groups in each word
+    syllable_count = sum(len(re.findall(r'[aeiouy]+', word.lower())) for word in line.strip().split())
+
+    # Check syllable count based on the line number in the Haiku
+    if line_num == 1 and syllable_count == 5:
+        return 'Pass'
+    elif line_num == 2 and syllable_count == 7:
+        return 'Pass'
+    elif line_num == 3 and syllable_count == 5:
+        return 'Pass'
     else:
-        return 'Fail'
+        return f'Fail - The line has {syllable_count} syllables instead of the required {5 if line_num in [1, 3] else 7}.'
     
 
 def nltk_syllable_count(word):
@@ -92,19 +92,13 @@ def fetch_all_poem_lines_other(poem_id):
 
 def fetch_all_poem_lines(poem_id):
     """
-    Fetches and concatenates all existing lines for a collaborative poem.
-    Args:
-        poem_id: The ID of the poem for which to fetch lines.
-    Returns:
-        A string containing all the lines of the poem, concatenated with line breaks.
+    Fetches and concatenates all existing lines for a collaborative poem, with each line on a new line.
     """
     # Query the database for all poem details (lines) in the order they were submitted
     poem_lines = PoemDetails.query.filter_by(poem_id=poem_id).order_by(PoemDetails.submitted_at.asc()).all()
 
     # Extract the 'content' field from each PoemDetails record and join them with newlines
-    all_lines = ""
-    for detail in poem_lines:
-        all_lines += detail.content
+    all_lines = "\n".join(detail.content for detail in poem_lines)
 
     return all_lines
 
@@ -115,8 +109,8 @@ def prepare_full_poem(existing_contributions, current_poem_content, poem_id):
     """
     if isinstance(existing_contributions, int):
         if existing_contributions > 0:
-            # Fetch and return all lines without appending the current content
-            return fetch_all_poem_lines(poem_id)
-        return current_poem_content
+            all_lines = fetch_all_poem_lines(poem_id)
+            return ", ".join(all_lines + [current_poem_content.strip()])
+        return current_poem_content.strip()
     else:
         raise ValueError(f"Unexpected type for existing_contributions: {type(existing_contributions)}")
