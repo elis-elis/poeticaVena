@@ -3,9 +3,9 @@ from flask_jwt_extended import jwt_required, get_jwt_identity
 from pydantic import ValidationError
 from .models import Poem, PoemType, Poet
 from .database import db
-from .schemas import PoemCreate, PoemTypeResponse, PoemResponse, PoemDetailsCreate, PoetResponse
+from .schemas import PoemCreate, PoemDetailsResponse, PoemTypeResponse, PoemResponse, PoemDetailsCreate, PoetResponse
 from .submit_poem_details import process_individual_poem, process_collaborative_poem, is_authorized_poet
-from .poem_utils import get_poem_by_id
+from .poem_utils import get_poem_by_id, get_poem_contributions_paginated
 from .poet_utils import get_all_poets, get_current_poet
 import logging
 from flask_jwt_extended.exceptions import JWTDecodeError
@@ -44,6 +44,32 @@ def get_poets():
     
     except Exception as e:
         logging.error(f"Error fetching poets: {str(e)}")
+        return jsonify({'error': f'An error occurred: {str(e)}'}), 500
+
+
+@routes.route('/get-poems', methods=['GET'])
+@jwt_required()
+def get_poems():
+    """
+    Retrieves poem contributions with pagination, and optional filters for poet_id and recent days.
+    """
+    # Fetch query parameters for pagination and filtering
+    poet_id = request.args.get('poet_id', type=int)
+    days = request.args.get('days', type=int)
+    page = request.args.get('page', type=int, default=1)
+    per_page = request.args.get('per_page', type=int, default=10)
+
+    try:
+        # Fetch paginated contributions
+        contributions = get_poem_contributions_paginated(page=page, per_page=per_page, poet_id=poet_id, days=days)
+
+        # Prepare response
+        contributions_response = [PoemDetailsResponse.model_validate(contribution).model_dump() for contribution in contributions]
+
+        return jsonify(contributions_response), 200
+
+    except Exception as e:
+        logging.error(f"Error fetching paginated poems: {str(e)}")
         return jsonify({'error': f'An error occurred: {str(e)}'}), 500
 
 
