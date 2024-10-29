@@ -152,7 +152,6 @@ def submit_collaborative_contribution():
         poem_details_data = PoemDetailsCreate(**request.json)
 
         poem = get_poem_by_id(poem_details_data.poem_id)
-        print(f'this is a poem from collab contributions:', poem, poem_details_data.poem_id)
 
         if not poem:
             logging.error('Poem not found when fetching by ID.')

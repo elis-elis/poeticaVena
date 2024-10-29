@@ -7,7 +7,7 @@ from backend.poetry_validators.poem_val import validate_consecutive_contribution
 from .database import db
 from .models import Poem, PoemDetails
 from .schemas import PoemDetailsResponse
-from .poem_utils import get_poem_type_by_id, get_poem_contributions
+from .poem_utils import get_poem_by_id, get_poem_type_by_id, get_poem_contributions
 from backend.poetry_validators.free_verse import handle_free_verse
 from backend.poetry_validators.haiku import handle_haiku
 from backend.poetry_validators.nonet import handle_nonet
@@ -56,7 +56,7 @@ def process_individual_poem(poem_details_data):
     Handle logic for individual poem submissions.
     """
     # Check if the poem entry exists for this individual poem
-    existing_poem = db.session.query(Poem).filter_by(id=poem_details_data.poem_id).first()
+    existing_poem = get_poem_by_id(poem_details_data.poem_id)
     if not existing_poem:
         return jsonify({'error': 'Poem does not exist.'}), 404
     
