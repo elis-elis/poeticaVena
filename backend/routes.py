@@ -6,7 +6,7 @@ from .database import db
 from .schemas import PoemCreate, PoemTypeResponse, PoemResponse, PoemDetailsCreate, PoetResponse
 from .submit_poem_details import process_individual_poem, process_collaborative_poem, is_authorized_poet
 from .poem_utils import get_poem_by_id
-from .poet_utils import get_current_poet
+from .poet_utils import get_all_poets, get_current_poet
 import logging
 from flask_jwt_extended.exceptions import JWTDecodeError
 
@@ -35,7 +35,7 @@ def get_poets():
     Retrieves a list of poets registered on the website.
     """
     try:
-        poets = Poet.query.all()
+        poets = get_all_poets()
 
         # Create a response structure using PoetResponse schema
         poet_responses = [PoetResponse.model_validate(poet).model_dump() for poet in poets]
