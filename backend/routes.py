@@ -3,7 +3,7 @@ from flask_jwt_extended import jwt_required, get_jwt_identity
 from pydantic import ValidationError
 from .models import Poem, PoemType, Poet
 from .database import db
-from .schemas import PoemCreate, PoemTypeResponse, PoemResponse, PoemDetailsCreate
+from .schemas import PoemCreate, PoemTypeResponse, PoemResponse, PoemDetailsCreate, PoetResponse
 from .submit_poem_details import process_individual_poem, process_collaborative_poem, is_authorized_poet
 from .poem_utils import get_poem_by_id
 from .poet_utils import get_current_poet
@@ -26,6 +26,25 @@ def home():
     """
     poet = get_current_poet()
     return jsonify(message=f'You are (almost) welcomed here, dear poet(esse) with ID {poet}. 🍸'), 200
+
+
+@routes.route('/get-poets', methods=['GET'])
+@jwt_required()
+def get_poets():
+    """
+    Retrieves a list of poets registered on the website.
+    """
+    try:
+        poets = Poet.query.all()
+
+        # Create a response structure using PoetResponse schema
+        poet_responses = [PoetResponse.model_validate(poet).model_dump() for poet in poets]
+
+        return jsonify(poet_responses), 200
+    
+    except Exception as e:
+        logging.error(f"Error fetching poets: {str(e)}")
+        return jsonify({'error': f'An error occurred: {str(e)}'}), 500
 
 
 @routes.route('/poem-types', methods=['GET'])
