@@ -28,8 +28,17 @@ def get_all_poets():
     return Poet.query.all()
 
 
+def get_all_poets_query():
+    """
+    Returns a query object for fetching all poets from the database.
+    """
+    return Poet.query
+
+
 def get_poet_contributions(poet_id):
     """
     Fetch all contributions made by a specific poet.
     """
     return PoemDetails.query.filet_by(poet_id=poet_id).all()
+
+

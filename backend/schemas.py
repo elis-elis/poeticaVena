@@ -64,7 +64,6 @@ class PoetCreate(BaseModel):
 class PoetResponse(PoetCreate):
     id: int
     created_at: datetime
-    # poems: Optional[list[PoemCreate]] = None
 
     class Config:
         from_attributes = True  # Allows reading data from SQLAlchemy objects

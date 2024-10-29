@@ -6,7 +6,7 @@ from .database import db
 from .schemas import PoemCreate, PoemDetailsResponse, PoemTypeResponse, PoemResponse, PoemDetailsCreate, PoetResponse
 from .submit_poem_details import process_individual_poem, process_collaborative_poem, is_authorized_poet
 from .poem_utils import fetch_all_poem_lines, get_poem_by_id, get_poem_contributions_paginated
-from .poet_utils import get_all_poets, get_current_poet
+from .poet_utils import get_all_poets, get_all_poets_query, get_current_poet
 import logging
 from flask_jwt_extended.exceptions import JWTDecodeError
 
@@ -32,16 +32,41 @@ def home():
 @jwt_required()
 def get_poets():
     """
-    Retrieves a list of poets registered on the website.
+    Retrieves a list of poets registered on the website with pagination.
     """
     try:
-        poets = get_all_poets()
+        # Get pagination parameters from the query string
+        page = request.args.get('page', type=int, default=1)
+        per_page = request.args.get('per_page', type=int, default=10)
 
-        # Create a response structure using PoetResponse schema
-        poet_responses = [PoetResponse.model_validate(poet).model_dump() for poet in poets]
+        # Fetch poets with pagination
+        poets_query = get_all_poets_query()
+        poets_paginated = poets_query.paginate(page=page, per_page=per_page, error_out=False)
 
-        return jsonify(poet_responses), 200
-    
+        # Prepare poet responses
+        poet_responses = []
+        for poet in poets_paginated.items:
+            # Directly create a dictionary representation for the response
+            poet_response = {
+                'id': poet.id,
+                'poet_name': poet.poet_name,
+                'email': poet.email,
+                'created_at': poet.created_at
+            }
+            # Append the response without password_hash
+            poet_responses.append(poet_response)
+
+        # Prepare pagination metadata
+        response_data = {
+            'total': poets_paginated.total,
+            'page': poets_paginated.page,
+            'per_page': poets_paginated.per_page,
+            'total_pages': poets_paginated.pages,
+            'poets': poet_responses
+        }
+
+        return jsonify(response_data), 200
+
     except Exception as e:
         logging.error(f"Error fetching poets: {str(e)}")
         return jsonify({'error': f'An error occurred: {str(e)}'}), 500
