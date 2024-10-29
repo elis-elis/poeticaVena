@@ -5,7 +5,7 @@ from .models import Poem, PoemType, Poet
 from .database import db
 from .schemas import PoemCreate, PoemDetailsResponse, PoemTypeResponse, PoemResponse, PoemDetailsCreate, PoetResponse
 from .submit_poem_details import process_individual_poem, process_collaborative_poem, is_authorized_poet
-from .poem_utils import get_poem_by_id, get_poem_contributions_paginated
+from .poem_utils import fetch_all_poem_lines, get_poem_by_id, get_poem_contributions_paginated
 from .poet_utils import get_all_poets, get_current_poet
 import logging
 from flask_jwt_extended.exceptions import JWTDecodeError
@@ -45,6 +45,39 @@ def get_poets():
     except Exception as e:
         logging.error(f"Error fetching poets: {str(e)}")
         return jsonify({'error': f'An error occurred: {str(e)}'}), 500
+
+
+@routes.route('/get-poem', methods=['GET'])
+@jwt_required()
+def get_poem():
+    """
+    Retrieves a specific poem's details and all its contributions.
+    """
+    poem_id = request.args.get('poem_id', type=int)
+
+    if not poem_id:
+        return jsonify({'error': 'poem_id is required.'}), 400
+    
+    try:
+        # Retrieve poem and its contributions
+        poem = get_poem_by_id(poem_id)
+        if not poem:
+            logging.error('Poem not found when fetching by ID.')
+            return jsonify({'error': 'Poem not found.'}), 404
+
+        poem_contributions = fetch_all_poem_lines(poem_id)
+
+        # Return the poem details and full text of all contributions
+        response_data = {
+            'poem': PoemDetailsResponse.model_validate(poem).model_dump(),
+            'contributions': poem_contributions
+        }
+
+        return jsonify(response_data), 200
+    
+    except Exception as e:
+        logging.error(f"Error fetching poem: {str(e)}")
+        return jsonify({'error': f'An error occurred: {str(e)}'}), 500 
 
 
 @routes.route('/get-poems', methods=['GET'])
