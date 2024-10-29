@@ -99,8 +99,11 @@ def prepare_full_poem(existing_contributions, current_poem_content, poem_id):
     # Fetch all previous lines from the poem and split them into a list
     all_lines = fetch_all_poem_lines(poem_id).splitlines()
 
-    # Add the new content to the list
-    full_poem_lines = all_lines + [current_poem_content.strip()]
+    # If the current content is not the last in existing_contributions, add it
+    if not all_lines or all_lines[-1] != current_poem_content.strip():
+        full_poem_lines = all_lines + [current_poem_content.strip()]
+    else:
+        full_poem_lines = all_lines
 
     # Join all lines with newlines to form the full poem text
     return "\n".join(full_poem_lines)

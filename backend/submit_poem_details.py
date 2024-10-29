@@ -3,9 +3,9 @@ This file handles the overall submission process for individual and collaborativ
 """
 
 from flask import jsonify, request
-from backend.poetry_validators.poem_val import validate_consecutive_contributions, validate_consecutive_contributions_new, validate_max_lines
+from backend.poetry_validators.poem_val import validate_consecutive_contributions_new, validate_max_lines
 from .database import db
-from .models import PoemDetails
+from .models import Poem, PoemDetails
 from .schemas import PoemDetailsResponse
 from .poem_utils import get_poem_type_by_id, get_poem_contributions
 from backend.poetry_validators.free_verse import handle_free_verse
@@ -51,19 +51,30 @@ def check_if_collaborative_poem_completed(existing_contributions, max_lines):
     return existing_contributions + 1 >= max_lines
 
 
-def process_individual_poem(poem, poem_details_data):
+def process_individual_poem(poem_details_data):
     """
     Handle logic for individual poem submissions.
     """
-    exisiting_contributions = get_poem_contributions(poem.id)
-    if exisiting_contributions > 0:
-        return jsonify({'error': 'This poem is not collaborative and already has content. 🪐'}), 400
+    # Check if the poem entry exists for this individual poem
+    existing_poem = db.session.query(Poem).filter_by(id=poem_details_data.poem_id).first()
+    if not existing_poem:
+        return jsonify({'error': 'Poem does not exist.'}), 404
     
-    poem_details = save_poem_details(poem_details_data)
+    # Ensure the poem is marked as non-collaborative
+    if existing_poem.is_collaborative:
+        return jsonify({'error': 'This poem is collaborative; cannot submit as an individual poem.'}), 400
 
-    # Return the new PoemDetails as a response
+    # Save the individual poem content
+    poem_details = PoemDetails(
+        poem_id=poem_details_data.poem_id,
+        poet_id=poem_details_data.poet_id,
+        content=poem_details_data.content
+    )
+    db.session.add(poem_details)
+    db.session.commit()
+
+    # Use PoemDetailsResponse to send back the details of the saved poem
     poem_details_response = PoemDetailsResponse.model_validate(poem_details)
-
     return jsonify(poem_details_response.model_dump()), 201
 
 

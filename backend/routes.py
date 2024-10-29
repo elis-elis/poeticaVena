@@ -116,8 +116,8 @@ def submit_individual_poem():
 
     try:
         # Validate and create the individual poem
-        poem_data = PoemCreate(**request.json)
-        return process_individual_poem(poem_data, poet_id)
+        poem_data = PoemDetailsCreate(**request.json)
+        return process_individual_poem(poem_data)
     
     except ValidationError as e:
         logging.error(f"Validation Error: {e.errors()}")
