@@ -5,7 +5,7 @@ from .models import Poem, PoemType
 from .database import db
 from .schemas import PoemCreate, PoemDetailsResponse, PoemTypeResponse, PoemResponse, PoemDetailsCreate, PoetResponse
 from .submit_poem_details import process_individual_poem, process_collaborative_poem, is_authorized_poet
-from .poem_utils import fetch_all_poem_lines, fetch_poem_lines, get_poem_by_id, get_poem_contributions_paginated
+from .poem_utils import fetch_poem_lines, get_poem_by_id, get_poem_contributions_query
 from .poet_utils import get_all_poets_query, get_current_poet
 import logging
 from flask_jwt_extended.exceptions import JWTDecodeError
@@ -117,13 +117,27 @@ def get_poems():
     per_page = request.args.get('per_page', type=int, default=10)
 
     try:
-        # Fetch paginated contributions
-        contributions = get_poem_contributions_paginated(page=page, per_page=per_page, poet_id=poet_id, days=days)
+        # Fetch paginated contributions with optional filters
+        contributions_query = get_poem_contributions_query(poet_id=poet_id, days=days)
+        contributions_paginated = contributions_query.paginate(page=page, per_page=per_page, error_out=False)
 
-        # Prepare response
-        contributions_response = [PoemDetailsResponse.model_validate(contribution).model_dump() for contribution in contributions]
+        # Prepare contributions response using PoemDetailsResponse schema
+        contributions_response = [
+            PoemDetailsResponse.model_validate(contribution).model_dump()
+            for contribution in contributions_paginated.items
+        ]
+        
+        # Prepare pagination metadata
+        response_data = {
+            'total': contributions_paginated.total,
+            'page': contributions_paginated.page,
+            'per_page': contributions_paginated.per_page,
+            'total_pages': contributions_paginated.pages,
+            'contributions': contributions_response
+        }
 
-        return jsonify(contributions_response), 200
+
+        return jsonify(response_data), 200
 
     except Exception as e:
         logging.error(f"Error fetching paginated poems: {str(e)}")

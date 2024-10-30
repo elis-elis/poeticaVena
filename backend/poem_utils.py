@@ -69,6 +69,24 @@ def get_poem_contributions(poem_id):
     return PoemDetails.query.filter_by(poem_id=poem_id).all()
 
 
+def get_poem_contributions_query(poet_id=None, days=None):
+    """
+    Constructs a query to retrieve poem contributions from the PoemDetails table or model in a database, 
+    with optional filters for specific poets and recent submission dates.
+    The function returns the query object itself.
+    """
+    query = PoemDetails.query
+
+    if poet_id:
+        query = query.filter(PoemDetails.poet_id == poet_id)
+
+    if days:
+        recent_date = datetime.now(timezone.utc) - timedelta(days=days)
+        query = query.filter(PoemDetails.submitted_at >= recent_date)
+
+    return query.order_by(PoemDetails.submitted_at.desc())
+
+
 def get_last_contribution(poem_id):
     """
     Fetch the most recent contribution to a collaborative poem.
@@ -119,29 +137,3 @@ def prepare_full_poem(existing_contributions, current_poem_content, poem_id):
 
     # Join all lines with newlines to form the full poem text
     return "\n".join(full_poem_lines)
-
-
-def get_poem_contributions_paginated(page=1, per_page=10, poet_id=None, days=None):
-    """
-    Retrieves a paginated list of poem contributions from a database with 
-    optional filters for a specific poet or a recent time range.
-    The function returns paginated_contributions.items, which is a list of contributions for the specified page, 
-    providing only the items that meet the filter criteria.
-    """
-    query = PoemDetails.query
-
-    # Filter by poet_id if provided
-    if poet_id:
-        query = query.filter_by(poet_id=poet_id)
-
-    # Filter by recent days if provided
-    if days:
-        # If days is provided, a recent date threshold is calculated by subtracting the days count from the current UTC date and time
-        recent_date = datetime.now(timezone.utc) - timedelta(days=days)
-        # The query is then filtered to only include contributions with a submitted_at timestamp that is later than or equal to this recent date threshold
-        query = query.filter(PoemDetails.submitted_at >= recent_date)
-
-    # Apply pagination
-    paginated_contributions = query.order_by(PoemDetails.submitted_at.desc()).paginate(page=page, per_page=per_page)
-
-    return paginated_contributions.tems   # Returns a list of contributions for the current page
