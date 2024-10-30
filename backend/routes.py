@@ -3,7 +3,7 @@ from flask_jwt_extended import jwt_required, get_jwt_identity
 from pydantic import ValidationError
 from .models import Poem, PoemType
 from .database import db
-from .schemas import PoemCreate, PoemDetailsResponse, PoemTypeResponse, PoemResponse, PoemDetailsCreate
+from .schemas import PoemCreate, PoemDetailsResponse, PoemTypeResponse, PoemResponse, PoemDetailsCreate, PoetResponse
 from .submit_poem_details import process_individual_poem, process_collaborative_poem, is_authorized_poet
 from .poem_utils import fetch_all_poem_lines, fetch_poem_lines, get_poem_by_id, get_poem_contributions_paginated
 from .poet_utils import get_all_poets_query, get_current_poet
@@ -44,18 +44,11 @@ def get_poets():
         poets_query = get_all_poets_query()
         poets_paginated = poets_query.paginate(page=page, per_page=per_page, error_out=False)
 
-        # Prepare poet responses
-        poet_responses = []
-        for poet in poets_paginated.items:
-            # Directly create a dictionary representation for the response
-            poet_response = {
-                'id': poet.id,
-                'poet_name': poet.poet_name,
-                'email': poet.email,
-                'created_at': poet.created_at
-            }
-            # Append the response without password_hash
-            poet_responses.append(poet_response)
+        # Prepare poet responses using the PoetResponse model
+        poet_responses = [
+            PoetResponse.model_validate(poet).model_dump(exclude={"password_hash"})
+            for poet in poets_paginated.items
+        ]
 
         # Prepare pagination metadata
         response_data = {
