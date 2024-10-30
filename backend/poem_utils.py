@@ -89,6 +89,17 @@ def fetch_all_poem_lines(poem_id):
     return all_lines
 
 
+def fetch_poem_lines(poem_id):
+    """
+    Fetches all existing contributions (lines) for a collaborative poem as individual records.
+    """
+    # Query the database for all poem details (lines) in the order they were submitted
+    poem_lines = PoemDetails.query.filter_by(poem_id=poem_id).order_by(PoemDetails.submitted_at.asc()).all()
+
+    # Return the list of PoemDetails records directly
+    return poem_lines
+
+
 def prepare_full_poem(existing_contributions, current_poem_content, poem_id):
     """
     Prepare the full poem so far including all previous contributions and the new one.

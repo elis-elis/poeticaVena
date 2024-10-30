@@ -1,12 +1,12 @@
 from flask import Blueprint, jsonify, request
 from flask_jwt_extended import jwt_required, get_jwt_identity
 from pydantic import ValidationError
-from .models import Poem, PoemType, Poet
+from .models import Poem, PoemType
 from .database import db
-from .schemas import PoemCreate, PoemDetailsResponse, PoemTypeResponse, PoemResponse, PoemDetailsCreate, PoetResponse
+from .schemas import PoemCreate, PoemDetailsResponse, PoemTypeResponse, PoemResponse, PoemDetailsCreate
 from .submit_poem_details import process_individual_poem, process_collaborative_poem, is_authorized_poet
-from .poem_utils import fetch_all_poem_lines, get_poem_by_id, get_poem_contributions_paginated
-from .poet_utils import get_all_poets, get_all_poets_query, get_current_poet
+from .poem_utils import fetch_all_poem_lines, fetch_poem_lines, get_poem_by_id, get_poem_contributions_paginated
+from .poet_utils import get_all_poets_query, get_current_poet
 import logging
 from flask_jwt_extended.exceptions import JWTDecodeError
 
@@ -33,6 +33,7 @@ def home():
 def get_poets():
     """
     Retrieves a list of poets registered on the website with pagination.
+    to test it: http://127.0.0.1:5000/get-poets?page=1&per_page=5
     """
     try:
         # Get pagination parameters from the query string
@@ -72,36 +73,41 @@ def get_poets():
         return jsonify({'error': f'An error occurred: {str(e)}'}), 500
 
 
-@routes.route('/get-poem', methods=['GET'])
+@routes.route('/get-poem/<int:poem_id>', methods=['GET'])
 @jwt_required()
-def get_poem():
+def get_poem(poem_id):
     """
     Retrieves a specific poem's details and all its contributions.
     """
-    poem_id = request.args.get('poem_id', type=int)
-
-    if not poem_id:
-        return jsonify({'error': 'poem_id is required.'}), 400
-    
     try:
-        # Retrieve poem and its contributions
+        # Fetch the poem details by ID
         poem = get_poem_by_id(poem_id)
         if not poem:
-            logging.error('Poem not found when fetching by ID.')
+            logging.error(f'Poem with ID {poem_id} not found.')
             return jsonify({'error': 'Poem not found.'}), 404
 
-        poem_contributions = fetch_all_poem_lines(poem_id)
+        # Validate and serialize poem information using PoemResponse schema
+        poem_data = PoemResponse.model_validate(poem).model_dump()
 
-        # Return the poem details and full text of all contributions
+        # Fetch contributions for the poem
+        poem_contributions = fetch_poem_lines(poem_id)
+
+        # Use PoemDetailsResponse to format each contribution
+        contributions_data = [
+            PoemDetailsResponse.model_validate(contribution).model_dump()
+            for contribution in poem_contributions
+        ]
+
+        # Prepare response data
         response_data = {
-            'poem': PoemDetailsResponse.model_validate(poem).model_dump(),
-            'contributions': poem_contributions
+            'poem': poem_data,   # Main poem information
+            'contributions': contributions_data    # Detailed contributions
         }
 
         return jsonify(response_data), 200
-    
+
     except Exception as e:
-        logging.error(f"Error fetching poem: {str(e)}")
+        logging.error(f"Error fetching poem with ID {poem_id}: {str(e)}")
         return jsonify({'error': f'An error occurred: {str(e)}'}), 500 
 
 
@@ -144,7 +150,7 @@ def get_poem_types():
     for poem_type in poem_types:
         poem_type_response = PoemTypeResponse.model_validate(poem_type)
         poem_types_response.append(poem_type_response)
-    
+
     # Return the list of poem types as JSON
     return jsonify(poem_types_response), 200
 
@@ -166,7 +172,7 @@ def submit_poem():
         poet = get_current_poet()
         if not poet:
             return jsonify({'error': 'Poet not found.'}), 404
-        
+
         # Validate incoming JSON data using PoemCreate Pydantic model
         poem_data = PoemCreate(**request.json)
 
@@ -221,16 +227,16 @@ def submit_individual_poem():
         # Validate and create the individual poem
         poem_data = PoemDetailsCreate(**request.json)
         return process_individual_poem(poem_data)
-    
+
     except ValidationError as e:
         logging.error(f"Validation Error: {e.errors()}")
         return jsonify({'status': 'error', 'message': 'Validation failed', 'errors': e.errors()}), 400
-    
+
     #except SQLAlchemyError as db_error:
         #logging.error(f"Database error for poet {poet_id} with poem {poem_data.dict()}: {str(db_error)}")
         #db.session.rollback()
         #return jsonify({'status': 'error', 'message': 'A database error occurred.'}), 500
-    
+
     except Exception as e:
         logging.error(f"Error submitting individual poem: {str(e)}")
         db.session.rollback()
@@ -273,7 +279,7 @@ def submit_collaborative_contribution():
     except ValidationError as e:
         logging.error(f"Validation error: {e.errors()}")
         return jsonify({'errors': e.errors()}), 400
-    
+
     except ValueError as e:
         logging.error(f"Error: {str(e)}")
         return jsonify({'error': str(e)}), 404
