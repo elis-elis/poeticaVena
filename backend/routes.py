@@ -5,7 +5,7 @@ from .models import Poem, PoemType
 from .database import db
 from .schemas import PoemCreate, PoemDetailsResponse, PoemTypeResponse, PoemResponse, PoemDetailsCreate, PoetResponse
 from .submit_poem_details import process_individual_poem, process_collaborative_poem, is_authorized_poet
-from .poem_utils import fetch_poem_lines, get_poem_by_id, get_poem_contributions_query
+from .poem_utils import fetch_poem_lines, get_poem_by_id, get_poem_contributions_query, prepare_full_poem
 from .poet_utils import get_all_poets_query, get_current_poet
 import logging
 from flask_jwt_extended.exceptions import JWTDecodeError
@@ -117,16 +117,32 @@ def get_poems():
     per_page = request.args.get('per_page', type=int, default=10)
 
     try:
-        # Fetch paginated contributions with optional filters
+        # Fetch only published contributions
         contributions_query = get_poem_contributions_query(poet_id=poet_id, days=days)
+        contributions_query = contributions_query.filter(Poem.is_published == True)
+        # Paginate results
         contributions_paginated = contributions_query.paginate(page=page, per_page=per_page, error_out=False)
 
-        # Prepare contributions response using PoemDetailsResponse schema
-        contributions_response = [
-            PoemDetailsResponse.model_validate(contribution).model_dump()
-            for contribution in contributions_paginated.items
-        ]
+        # Prepare a dictionary to group contributions by poem_id
+        # Only unique poems are added to poems_dict, where each entry is keyed by poem_id
+        poems_dict = {}
         
+        for contribution in contributions_paginated.items:
+            # Prepare the full poem content by poem_id
+            if contribution.poem_id not in poems_dict:
+                full_poem = prepare_full_poem(contributions_paginated.items, contribution.content, contribution.poem_id)
+        
+                # Create a response dict for each contribution
+                poems_dict[contribution.poem_id] = {
+                    'id': contribution.id,
+                    'poem_id': contribution.poem_id,
+                    'poet_id': contribution.poet_id,
+                    'submitted_at': contribution.submitted_at,
+                    'full_poem': full_poem
+                }
+        # Convert the poems dictionary into a list for the final response
+        contributions_response = list(poems_dict.values())
+
         # Prepare pagination metadata
         response_data = {
             'total': contributions_paginated.total,
@@ -135,7 +151,6 @@ def get_poems():
             'total_pages': contributions_paginated.pages,
             'contributions': contributions_response
         }
-
 
         return jsonify(response_data), 200
 
