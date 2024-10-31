@@ -1,7 +1,7 @@
 from flask import Blueprint, jsonify, request
 from flask_jwt_extended import jwt_required, get_jwt_identity
 from pydantic import ValidationError
-from .models import Poem, PoemType
+from .models import Poem, PoemDetails, PoemType, Poet
 from .database import db
 from .schemas import PoemCreate, PoemDetailsResponse, PoemTypeResponse, PoemResponse, PoemDetailsCreate, PoetResponse
 from .submit_poem_details import process_individual_poem, process_collaborative_poem, is_authorized_poet
@@ -104,9 +104,9 @@ def get_poem(poem_id):
         return jsonify({'error': f'An error occurred: {str(e)}'}), 500 
 
 
-@routes.route('/get-poems', methods=['GET'])
+@routes.route('/get-all-poems', methods=['GET'])
 @jwt_required()
-def get_poems():
+def get_all_poems():
     """
     Retrieves poem contributions with pagination, and optional filters for poet_id and recent days.
     """
@@ -119,14 +119,14 @@ def get_poems():
     try:
         # Fetch only published contributions
         contributions_query = get_poem_contributions_query(poet_id=poet_id, days=days)
-        contributions_query = contributions_query.filter(Poem.is_published == True)
+        # contributions_query = contributions_query.filter(Poem.is_published == True)
         # Paginate results
         contributions_paginated = contributions_query.paginate(page=page, per_page=per_page, error_out=False)
 
         # Prepare a dictionary to group contributions by poem_id
         # Only unique poems are added to poems_dict, where each entry is keyed by poem_id
         poems_dict = {}
-        
+
         for contribution in contributions_paginated.items:
             # Prepare the full poem content by poem_id
             if contribution.poem_id not in poems_dict:
@@ -150,6 +150,74 @@ def get_poems():
             'per_page': contributions_paginated.per_page,
             'total_pages': contributions_paginated.pages,
             'contributions': contributions_response
+        }
+
+        return jsonify(response_data), 200
+
+    except Exception as e:
+        logging.error(f"Error fetching paginated poems: {str(e)}")
+        return jsonify({'error': f'An error occurred: {str(e)}'}), 500
+
+
+@routes.route('/get-poems', methods=['GET'])
+@jwt_required()
+def get_poems():
+    """
+    Retrieves poems with optional filters for type and collaborative status, and paginated.
+    Returns only published poems by type or active collaborative poems as per filter criteria.
+    """
+    # Fetch query parameters for pagination and filtering
+    poem_type_id = request.args.get('poem_type_id', type=int)
+    is_collaborative = request.args.get('is_collaborative')
+    page = request.args.get('page', type=int, default=1)
+    per_page = request.args.get('per_page', type=int, default=10)
+
+    try:
+        # Initialize the query from the Poem model, joining necessary related tables
+        # outerjoin ensures - even if a poem doesn’t have additional details, it will still appear in the results
+        query = db.session.query(Poem).join(Poet).outerjoin(PoemDetails)
+
+        # Apply filters based on query parameters, allowing independent application of each filter
+        if poem_type_id is not None:
+            # Show only published poems of a specific type
+            query = query.filter(Poem.poem_type_id == poem_type_id, Poem.is_published == True)
+        
+        if is_collaborative is not None and is_collaborative.lower() == 'true':
+            # Show only active collaborative poems (not published yet)
+            query = query.filter(Poem.is_collaborative == True, Poem.is_published == False)
+        
+        # Paginate the results
+        poems_paginated = query.paginate(page=page, per_page=per_page, error_out=False)
+
+        # Prepare response data based on filters
+        poems_response = []
+        for poem in poems_paginated.items:
+            if poem_type_id is not None:
+                # For published poems by type, show title, poet name, and first line
+                first_line = poem.poem_details[0].content.splitlines()[0] if poem.poem_details else ""
+                poems_response.append({
+                    'id': poem.id,
+                    'title': poem.title,
+                    'poet_name': poem.poet.poet_name,
+                    'first_line': first_line
+                })
+            elif is_collaborative and is_collaborative.lower() == 'true':
+                # For collaborative poems, show full poem details for active contributions
+                full_poem = "\n".join([detail.content for detail in poem.poem_details])
+                poems_response.append({
+                    'id': poem.id,
+                    'title': poem.title,
+                    'full_poem': full_poem,
+                    'created_at': poem.created_at
+                })
+
+        # Prepare pagination metadata
+        response_data = {
+            'total': poems_paginated.total,
+            'page': poems_paginated.page,
+            'per_page': poems_paginated.per_page,
+            'total_pages': poems_paginated.pages,
+            'poems': poems_response
         }
 
         return jsonify(response_data), 200

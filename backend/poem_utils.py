@@ -109,6 +109,22 @@ def fetch_all_poem_lines(poem_id):
     return all_lines
 
 
+def fetch_all_poems_lines(poem_id, exclude_line=None):
+    """
+    Fetches and concatenates all existing lines for a collaborative poem, with each line on a new line,
+    and excludes the specified `exclude_line`.
+    """
+    poem_lines = PoemDetails.query.filter_by(poem_id=poem_id).order_by(PoemDetails.submitted_at.asc()).all()
+
+    # Extract the 'content' field from each PoemDetails record, excluding the last line if it matches exclude_line
+    all_lines = [
+        detail.content for detail in poem_lines
+        if detail.content.strip() != (exclude_line.strip() if exclude_line else "")
+    ]
+    
+    return "\n".join(all_lines)
+
+
 def fetch_poem_lines(poem_id):
     """
     Fetches all existing contributions (lines) for a collaborative poem as individual records.
@@ -122,23 +138,19 @@ def fetch_poem_lines(poem_id):
 
 def prepare_full_poem(existing_contributions, current_poem_content, poem_id):
     """
-    Prepare the full poem so far including all previous contributions and the new one.
+    Prepare the full poem so far, ensuring no duplicate contributions are appended.
     """
     # Ensure existing_contributions is a list of lines
     if not isinstance(existing_contributions, list):
         raise ValueError(f"Unexpected type for existing_contributions: {type(existing_contributions)}")
     
-    # Fetch all previous lines from the poem and split them into a list
-    all_lines = fetch_all_poem_lines(poem_id).splitlines()
+    # Fetch previous lines in correct order, excluding `current_poem_content` to avoid duplication
+    all_lines = fetch_all_poem_lines(poem_id)
 
-    # If the current content is not the last in existing_contributions, add it
-    if not all_lines or all_lines[-1] != current_poem_content.strip():
-        full_poem_lines = all_lines + [current_poem_content.strip()]
-    else:
-        full_poem_lines = all_lines
+    # Append the current content as the last line
+    full_poem_lines = all_lines + [current_poem_content.strip()]
 
-    # Join all lines with newlines to form the full poem text
-    return "\n".join(full_poem_lines)
+    return full_poem_lines
 
 
 def get_poem_contributions_paginated(page=1, per_page=10, poet_id=None, days=None):
