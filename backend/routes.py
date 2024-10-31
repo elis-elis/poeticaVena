@@ -215,7 +215,9 @@ def submit_poem():
             title=poem_data.title,
             poem_type_id=poem_data.poem_type_id,
             is_collaborative=poem_data.is_collaborative,
-            poet_id=poet.id  # Associate the poem with the currently logged-in poet
+            poet_id=poet.id,  # Associate the poem with the currently logged-in poet
+            is_published=True  # Ensure poem is marked as published on creation
+
         )
 
         db.session.add(new_poem)
