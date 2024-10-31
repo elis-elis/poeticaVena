@@ -5,7 +5,7 @@ from .models import Poem, PoemDetails, PoemType, Poet
 from .database import db
 from .schemas import PoemCreate, PoemDetailsResponse, PoemTypeResponse, PoemResponse, PoemDetailsCreate, PoetResponse
 from .submit_poem_details import process_individual_poem, process_collaborative_poem, is_authorized_poet
-from .poem_utils import fetch_poem_lines, get_poem_by_id, get_poem_contributions_query, prepare_full_poem
+from .poem_utils import fetch_poem_lines, get_poem_by_id, get_poem_contributions_query, prepare_full_poem, prepare_full_poems
 from .poet_utils import get_all_poets_query, get_current_poet
 import logging
 from flask_jwt_extended.exceptions import JWTDecodeError
@@ -163,11 +163,10 @@ def get_all_poems():
 @jwt_required()
 def get_poems():
     """
-    Retrieves poems with optional filters for type and collaborative status, and paginated.
-    Returns only published poems by type or active collaborative poems as per filter criteria.
+    Retrieves poems with optional filter for collaborative status, and paginated.
+    Returns only published poems or active collaborative poems as per filter criteria.
     """
     # Fetch query parameters for pagination and filtering
-    poem_type_id = request.args.get('poem_type_id', type=int)
     is_collaborative = request.args.get('is_collaborative')
     page = request.args.get('page', type=int, default=1)
     per_page = request.args.get('per_page', type=int, default=10)
@@ -178,37 +177,40 @@ def get_poems():
         query = db.session.query(Poem).join(Poet).outerjoin(PoemDetails)
 
         # Apply filters based on query parameters, allowing independent application of each filter
-        if poem_type_id is not None:
-            # Show only published poems of a specific type
-            query = query.filter(Poem.poem_type_id == poem_type_id, Poem.is_published == True)
-        
         if is_collaborative is not None and is_collaborative.lower() == 'true':
             # Show only active collaborative poems (not published yet)
             query = query.filter(Poem.is_collaborative == True, Poem.is_published == False)
-        
+
+        else:
+            # Show only published poems
+            query = query.filter(Poem.is_published == True)
+
         # Paginate the results
         poems_paginated = query.paginate(page=page, per_page=per_page, error_out=False)
 
         # Prepare response data based on filters
         poems_response = []
         for poem in poems_paginated.items:
-            if poem_type_id is not None:
-                # For published poems by type, show title, poet name, and first line
+            if is_collaborative and is_collaborative.lower() == 'true':
+                # For collaborative poems, include the full poem details
+                # full_poem = "\n".join([detail.content for detail in poem.poem_details])
+                full_poem = prepare_full_poems(poem.poem_details)
+                poems_response.append({
+                    'id': poem.id,
+                    'title': poem.title,
+                    'full_poem': full_poem,
+                    'created_at': poem.created_at,
+                    'poem_type_id': poem.poem_type_id  # Include poem_type_id in response
+                })
+            else:
+                # For published poems, include title, poet name, and first line
                 first_line = poem.poem_details[0].content.splitlines()[0] if poem.poem_details else ""
                 poems_response.append({
                     'id': poem.id,
                     'title': poem.title,
                     'poet_name': poem.poet.poet_name,
-                    'first_line': first_line
-                })
-            elif is_collaborative and is_collaborative.lower() == 'true':
-                # For collaborative poems, show full poem details for active contributions
-                full_poem = "\n".join([detail.content for detail in poem.poem_details])
-                poems_response.append({
-                    'id': poem.id,
-                    'title': poem.title,
-                    'full_poem': full_poem,
-                    'created_at': poem.created_at
+                    'first_line': first_line,
+                    'poem_type_id': poem.poem_type_id  # Include poem_type_id in response
                 })
 
         # Prepare pagination metadata

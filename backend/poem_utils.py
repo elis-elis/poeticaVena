@@ -145,12 +145,19 @@ def prepare_full_poem(existing_contributions, current_poem_content, poem_id):
         raise ValueError(f"Unexpected type for existing_contributions: {type(existing_contributions)}")
     
     # Fetch previous lines in correct order, excluding `current_poem_content` to avoid duplication
-    all_lines = fetch_all_poem_lines(poem_id)
+    all_lines = fetch_all_poems_lines(poem_id)
 
     # Append the current content as the last line
     full_poem_lines = all_lines + [current_poem_content.strip()]
 
     return full_poem_lines
+
+
+def prepare_full_poems(poem_details):
+    """
+    Concatenates all content entries in PoemDetails to create the full poem text.
+    """
+    return "\n".join(detail.content for detail in poem_details)
 
 
 def get_poem_contributions_paginated(page=1, per_page=10, poet_id=None, days=None):
