@@ -3,7 +3,7 @@ This file handles the overall submission process for individual and collaborativ
 """
 
 from flask import jsonify, request
-from backend.poetry_validators.poem_val import validate_consecutive_contributions_new, validate_max_lines
+from backend.poetry_validators.poem_val import validate_consecutive_contributions, validate_consecutive_contributions_new, validate_max_lines
 from .database import db
 from .models import Poem, PoemDetails
 from .schemas import PoemDetailsResponse
@@ -100,7 +100,7 @@ def process_collaborative_poem(poem, poem_details_data, poet_id):
     existing_contributions = [contribution.content for contribution in existing_contributions_data if contribution.content.strip()]  # Extract and filter out empty lines
     
     # Consecutive contributions validation
-    consecutive_error = validate_consecutive_contributions_new(existing_contributions_data, poet_id, poem.id)
+    consecutive_error = validate_consecutive_contributions(existing_contributions_data, poet_id, poem.id)
     if consecutive_error:
         return consecutive_error
     

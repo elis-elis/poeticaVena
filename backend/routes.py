@@ -210,13 +210,16 @@ def submit_poem():
 
         print(poem_data)
 
+        # Set `is_published` based on whether the poem is collaborative
+        is_published = not poem_data.is_collaborative
+
         # Create and save the poem to the database
         new_poem = Poem(
             title=poem_data.title,
             poem_type_id=poem_data.poem_type_id,
             is_collaborative=poem_data.is_collaborative,
             poet_id=poet.id,  # Associate the poem with the currently logged-in poet
-            is_published=True  # Ensure poem is marked as published on creation
+            is_published=is_published  # Publish only if the poem is individual
 
         )
 

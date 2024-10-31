@@ -1,3 +1,6 @@
+import logging
+
+from flask import jsonify
 from .models import Poem, PoemType, PoemDetails
 # import re
 from datetime import datetime, timedelta, timezone
@@ -151,6 +154,30 @@ def prepare_full_poem(existing_contributions, current_poem_content, poem_id):
     full_poem_lines = all_lines + [current_poem_content.strip()]
 
     return full_poem_lines
+
+
+def prepare_poem(existing_contributions, current_poem_content, poem_id):
+    """
+    Prepare the full poem content by combining existing contributions with the current content.
+    """
+    # Ensure existing_contributions is a list of strings, join if necessary
+    if isinstance(existing_contributions, list):
+        existing_contributions = "\n".join(existing_contributions)
+    elif not isinstance(existing_contributions, str):
+        logging.error("Expected existing_contributions to be a string or list of strings.")
+        return jsonify({'error': 'Error: Contributions format is invalid.'}), 500
+
+    # Ensure current_poem_content is a string
+    if isinstance(current_poem_content, list):
+        current_poem_content = " ".join(current_poem_content)
+    elif not isinstance(current_poem_content, str):
+        logging.error("Expected current_poem_content to be a string.")
+        return jsonify({'error': 'Error: Current poem content format is invalid.'}), 500
+
+    # Combine the existing contributions with the current line
+    full_poem = f"{existing_contributions}\n{current_poem_content}".strip()
+    
+    return full_poem
 
 
 def prepare_full_poems(poem_details):

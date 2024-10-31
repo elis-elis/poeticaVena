@@ -1,8 +1,9 @@
+import logging
 from backend.database import db
 from flask import jsonify
 from backend.ai_val import fetch_poem_validation_from_ai
 from backend.models import PoemDetails
-from backend.poem_utils import fetch_all_poem_lines, validate_haiku_line
+from backend.poem_utils import fetch_all_poem_lines, prepare_poem, validate_haiku_line
 from backend.poem_utils import prepare_full_poem
 from backend.schemas import PoemDetailsResponse
 
@@ -32,6 +33,11 @@ def handle_haiku(existing_contributions, current_poem_content, poem, poem_detail
     # Combine all previous lines (for presentation purposes, not validation)
     previous_lines = fetch_all_poem_lines(poem.id)
 
+    # Check if previous_lines is a string to avoid errors when stripping or splitting
+    if not isinstance(previous_lines, str):
+        logging.error("Expected previous_lines to be a string but got a different type.")
+        previous_lines = ""  # Fallback to empty string
+
     # Strip and split previous lines, ensuring to filter out empty strings
     previous_lines_list = [line for line in previous_lines.strip().split('\n') if line.strip()]
 
@@ -59,7 +65,11 @@ def handle_haiku(existing_contributions, current_poem_content, poem, poem_detail
 
     # Save the contribution after passing validation
     poem_details = save_poem_details(poem_details_data)
-    full_poem_so_far = prepare_full_poem(existing_contributions, current_poem_content, poem.id)
+    try:
+        full_poem_so_far = prepare_poem(existing_contributions, current_poem_content, poem.id)
+    except TypeError as e:
+        logging.error(f"Error preparing full poem: {e}")
+        return jsonify({'error': 'Error preparing the full poem content.'}), 500
 
     # Check if the Haiku is now complete (3 lines in total)
     if len(combined_lines) == 3:
