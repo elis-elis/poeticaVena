@@ -84,78 +84,18 @@ def get_poem(poem_id):
 
         # Fetch contributions for the poem
         poem_contributions = fetch_poem_lines(poem_id)
-
-        # Use PoemDetailsResponse to format each contribution
-        contributions_data = [
-            PoemDetailsResponse.model_validate(contribution).model_dump()
-            for contribution in poem_contributions
-        ]
+        full_poem_text = "\n".join([contribution.content for contribution in poem_contributions])
 
         # Prepare response data
         response_data = {
             'poem': poem_data,   # Main poem information
-            'contributions': contributions_data    # Detailed contributions
+            'contributions': full_poem_text
         }
 
         return jsonify(response_data), 200
 
     except Exception as e:
         logging.error(f"Error fetching poem with ID {poem_id}: {str(e)}")
-        return jsonify({'error': f'An error occurred: {str(e)}'}), 500 
-
-
-@routes.route('/get-all-poems', methods=['GET'])
-@jwt_required()
-def get_all_poems():
-    """
-    Retrieves poem contributions with pagination, and optional filters for poet_id and recent days.
-    """
-    # Fetch query parameters for pagination and filtering
-    poet_id = request.args.get('poet_id', type=int)
-    days = request.args.get('days', type=int)
-    page = request.args.get('page', type=int, default=1)
-    per_page = request.args.get('per_page', type=int, default=10)
-
-    try:
-        # Fetch only published contributions
-        contributions_query = get_poem_contributions_query(poet_id=poet_id, days=days)
-        # contributions_query = contributions_query.filter(Poem.is_published == True)
-        # Paginate results
-        contributions_paginated = contributions_query.paginate(page=page, per_page=per_page, error_out=False)
-
-        # Prepare a dictionary to group contributions by poem_id
-        # Only unique poems are added to poems_dict, where each entry is keyed by poem_id
-        poems_dict = {}
-
-        for contribution in contributions_paginated.items:
-            # Prepare the full poem content by poem_id
-            if contribution.poem_id not in poems_dict:
-                full_poem = prepare_full_poem(contributions_paginated.items, contribution.content, contribution.poem_id)
-        
-                # Create a response dict for each contribution
-                poems_dict[contribution.poem_id] = {
-                    'id': contribution.id,
-                    'poem_id': contribution.poem_id,
-                    'poet_id': contribution.poet_id,
-                    'submitted_at': contribution.submitted_at,
-                    'full_poem': full_poem
-                }
-        # Convert the poems dictionary into a list for the final response
-        contributions_response = list(poems_dict.values())
-
-        # Prepare pagination metadata
-        response_data = {
-            'total': contributions_paginated.total,
-            'page': contributions_paginated.page,
-            'per_page': contributions_paginated.per_page,
-            'total_pages': contributions_paginated.pages,
-            'contributions': contributions_response
-        }
-
-        return jsonify(response_data), 200
-
-    except Exception as e:
-        logging.error(f"Error fetching paginated poems: {str(e)}")
         return jsonify({'error': f'An error occurred: {str(e)}'}), 500
 
 
