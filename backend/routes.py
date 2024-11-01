@@ -9,7 +9,7 @@ from .poem_utils import fetch_poem_lines, get_poem_by_id, get_poem_contributions
 from .poet_utils import get_all_poets_query, get_current_poet
 import logging
 from flask_jwt_extended.exceptions import JWTDecodeError
-
+import json
 
 # Configure logging
 logging.basicConfig(level=logging.ERROR)
@@ -99,6 +99,15 @@ def get_poem(poem_id):
         return jsonify({'error': f'An error occurred: {str(e)}'}), 500
 
 
+@routes.route('/get-poems2', methods=['GET'])
+@jwt_required()
+def get_poems2():
+    poems = db.session.query(Poem).all()
+    poems_list = [poem.to_dict() for poem in poems]
+    return jsonify(poems_list)
+
+
+
 @routes.route('/get-poems', methods=['GET'])
 @jwt_required()
 def get_poems():
@@ -161,6 +170,9 @@ def get_poems():
             'total_pages': poems_paginated.pages,
             'poems': poems_response
         }
+
+        print(poems_paginated)
+
 
         return jsonify(response_data), 200
 

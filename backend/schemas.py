@@ -3,25 +3,6 @@ from datetime import datetime
 from typing import Optional
 
 
-# Models for Poem
-
-class PoemCreate(BaseModel):
-    title: str = Field(..., max_length=250)
-    poem_type_id: int
-    poet_id: int
-    is_collaborative: Optional[bool] = False
-
-
-class PoemResponse(PoemCreate):
-    id: int
-    is_published: Optional[bool] = False
-    created_at: datetime
-    updated_at: Optional[datetime] = None
-
-    class Config:
-        from_attributes = True
-
-
 # Models for Poem Type
 
 class PoemTypeCreate(BaseModel):
@@ -67,3 +48,23 @@ class PoetResponse(PoetCreate):
 
     class Config:
         from_attributes = True  # Allows reading data from SQLAlchemy objects
+
+
+# Models for Poem
+
+class PoemCreate(BaseModel):
+    title: str = Field(..., max_length=250)
+    poem_type_id: int
+    poet_id: int
+    is_collaborative: Optional[bool] = False
+
+
+class PoemResponse(PoemCreate):
+    id: int
+    is_published: Optional[bool] = False
+    created_at: datetime
+    updated_at: Optional[datetime] = None
+    details: Optional[PoemDetailsCreate] = []
+
+    class Config:
+        from_attributes = True

@@ -29,6 +29,11 @@ class Poem(db.Model):
     # One-to-one or one-to-many relationship with PoemDetails
     poem_details = db.relationship('PoemDetails', backref='poem', lazy=True, passive_deletes=True)
     # user = db.relationship("Poet", back_populates="user_poems")
+    def to_dict(self):
+        # Convert object to dictionary and handle nested relationships
+        poem_dict = {key: value for key, value in self.__dict__.items() if not key.startswith('_')}
+        poem_dict['details'] = [detail.to_dict() for detail in self.poem_details]
+        return poem_dict
 
 
 class PoemType(db.Model):
@@ -51,3 +56,6 @@ class PoemDetails(db.Model):
     poet_id = db.Column(db.Integer, db.ForeignKey('poets.id'), nullable=False)
     content = db.Column(db.Text, nullable=False)
     submitted_at = db.Column(db.DateTime(timezone=True), default=func.now())
+    def to_dict(self):
+        # Convert to dictionary, removing SQLAlchemy attributes
+        return {key: value for key, value in self.__dict__.items() if not key.startswith('_')}
