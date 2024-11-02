@@ -171,9 +171,6 @@ def get_poems():
             'poems': poems_response
         }
 
-        print(poems_paginated)
-
-
         return jsonify(response_data), 200
 
     except Exception as e:
@@ -232,7 +229,6 @@ def submit_poem():
             is_collaborative=poem_data.is_collaborative,
             poet_id=poet.id,  # Associate the poem with the currently logged-in poet
             is_published=is_published  # Publish only if the poem is individual
-
         )
 
         db.session.add(new_poem)

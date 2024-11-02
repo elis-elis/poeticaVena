@@ -100,7 +100,7 @@ def process_collaborative_poem(poem, poem_details_data, poet_id):
     existing_contributions = [contribution.content for contribution in existing_contributions_data if contribution.content.strip()]  # Extract and filter out empty lines
     
     # Consecutive contributions validation
-    consecutive_error = validate_consecutive_contributions(existing_contributions_data, poet_id, poem.id)
+    consecutive_error = validate_consecutive_contributions_new(existing_contributions_data, poet_id, poem.id)
     if consecutive_error:
         return consecutive_error
     

@@ -1,6 +1,6 @@
 from pydantic import BaseModel, EmailStr, Field
 from datetime import datetime
-from typing import Optional
+from typing import List, Optional
 
 
 # Models for Poem Type
@@ -64,7 +64,7 @@ class PoemResponse(PoemCreate):
     is_published: Optional[bool] = False
     created_at: datetime
     updated_at: Optional[datetime] = None
-    details: Optional[PoemDetailsCreate] = []
+    details: Optional[List[PoemDetailsCreate]] = []
 
     class Config:
         from_attributes = True
