@@ -103,8 +103,14 @@ def get_poem(poem_id):
 @jwt_required()
 def get_poems():
     """
-    Retrieves poems with filters for collaborative status and publication status, with pagination.
-    This route avoids joins and relies on data nested in the Poem model's structure.
+    This route retrieves poems with filters for collaborative status and publication status, with pagination.
+    If is_collaborative=true, we show only collaborative poems that are not yet published.
+    Otherwise, we show only published poems.
+    page and per_page are handled by SQLAlchemy’s paginate method on the query object.
+    Since Poem includes a relationship with PoemDetails, calling to_dict() on each Poem object will also serialize each poem’s details into the response. 
+    The poem_dict['details'] in Poem.to_dict() uses PoemDetails.to_dict() to format each PoemDetails entry.
+    This route returns a JSON response that includes paginated poem results with details,
+    filtered according to the is_collaborative and is_published criteria.
     """
     # Fetch query parameters for filtering and pagination
     is_collaborative = request.args.get('is_collaborative')
@@ -299,3 +305,43 @@ def submit_collaborative_contribution():
         logging.error(f"Error submitting collaborative contribution: {str(e)}")
         db.session.rollback()
         return jsonify({'error': f'An error occurred: {str(e)}'}), 500
+
+
+@routes.route('/edit-poem/<int:poem_id>', methods=['GET', 'POST'])
+@jwt_required()
+def edit_poem(poem_id):
+    """
+    Handle fetching current poem data (GET) and updating poem data (POST).
+    """
+    pass
+
+
+@routes.route('/delete-poem/<int:poem_id>', methods=['POST'])
+@jwt_required()
+def delete_poem(poem_id):
+    """
+    Handles deletion of a poem by a specific poet.
+    """
+    try:
+        poet = get_current_poet()
+        if not poet:
+            return jsonify({'error': 'Poet(esse) not found.'}), 404
+        
+        poem = get_poem_by_id(poem_id)
+        if not poem:
+            return jsonify({'error': 'Poem not found.'}), 404
+        
+        # Authorization check
+        if poem.poet_id != poet.id:
+            return jsonify({'error': 'You do not have permission to delete this poem.'}), 403
+
+        # Delete the poem and commit changes
+        db.session.delete(poem)
+        db.session.commit()
+
+        return jsonify({'status': 'success', 'message': 'Poem deleted successfully.'}), 200
+
+    except Exception as e:
+        logging.error(f"Error deleting poem: {str(e)}")
+        db.session.rollback()
+        return jsonify({'status': 'error', 'message': f'An error occurred: {str(e)}'}), 500
