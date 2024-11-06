@@ -26,6 +26,10 @@ class PoemDetailsCreate(BaseModel):
     content: str = Field(..., min_length=5)
 
 
+class PoemDetailsUpdate(BaseModel):
+    content: Optional[str] = None
+
+
 class PoemDetailsResponse(PoemDetailsCreate):
     id: int
     submitted_at: datetime
@@ -59,12 +63,18 @@ class PoemCreate(BaseModel):
     is_collaborative: Optional[bool] = False
 
 
+class PoemUpdate(BaseModel):
+    title: Optional[str] = Field(None, max_length=250)
+    poem_type_id: Optional[int]
+    details: Optional[List[PoemDetailsUpdate]] = []
+
+
 class PoemResponse(PoemCreate):
     id: int
     is_published: Optional[bool] = False
     created_at: datetime
     updated_at: Optional[datetime] = None
-    details: Optional[List[PoemDetailsCreate]] = []
+    details: Optional[List[PoemDetailsResponse]] = []
 
     class Config:
         from_attributes = True

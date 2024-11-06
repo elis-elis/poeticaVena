@@ -1,11 +1,10 @@
 import logging
-
 from flask import jsonify
 from .models import Poem, PoemType, PoemDetails
 # import re
 from datetime import datetime, timedelta, timezone
-from sqlalchemy.orm import joinedload
 from .database import db
+from sqlalchemy.orm import joinedload
 
 
 def count_syllables(line):
@@ -65,6 +64,13 @@ def get_poem_by_id(poem_id):
     Fetch a poem by its ID from the database.
     """
     return Poem.query.get(poem_id)
+
+
+def get_full_poem_by_id(poem_id):
+    """
+    Fetch a Poem with its PoemDetails loaded.
+    """
+    return Poem.query.options(joinedload(Poem.poem_details)).filter_by(id=poem_id).first()
 
 
 def get_poem_contributions(poem_id):

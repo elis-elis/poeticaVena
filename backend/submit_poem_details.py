@@ -3,9 +3,9 @@ This file handles the overall submission process for individual and collaborativ
 """
 
 from flask import jsonify, request
-from backend.poetry_validators.poem_val import validate_consecutive_contributions, validate_consecutive_contributions_new, validate_max_lines
+from backend.poetry_validators.poem_val import validate_consecutive_contributions_new, validate_max_lines
 from .database import db
-from .models import Poem, PoemDetails
+from .models import PoemDetails
 from .schemas import PoemDetailsResponse
 from .poem_utils import get_poem_by_id, get_poem_type_by_id, get_poem_contributions
 from backend.poetry_validators.free_verse import handle_free_verse

@@ -1,15 +1,16 @@
+from datetime import datetime, timedelta, timezone
 from flask import Blueprint, jsonify, request
 from flask_jwt_extended import jwt_required, get_jwt_identity
 from pydantic import ValidationError
-from .models import Poem, PoemDetails, PoemType, Poet
+from .models import Poem, PoemDetails, PoemType
 from .database import db
-from .schemas import PoemCreate, PoemDetailsResponse, PoemTypeResponse, PoemResponse, PoemDetailsCreate, PoetResponse
+from .schemas import PoemCreate, PoemTypeResponse, PoemResponse, PoemDetailsCreate, PoemUpdate, PoetResponse
 from .submit_poem_details import process_individual_poem, process_collaborative_poem, is_authorized_poet
-from .poem_utils import fetch_poem_lines, get_poem_by_id, get_poem_contributions_query, prepare_full_poem, prepare_full_poems
+from .poem_utils import fetch_poem_lines, get_full_poem_by_id, get_poem_by_id
 from .poet_utils import get_all_poets_query, get_current_poet
 import logging
 from flask_jwt_extended.exceptions import JWTDecodeError
-import json
+
 
 # Configure logging
 logging.basicConfig(level=logging.ERROR)
@@ -76,7 +77,7 @@ def get_poem(poem_id):
         # Fetch the poem details by ID
         poem = get_poem_by_id(poem_id)
         if not poem:
-            logging.error(f'Poem with ID {poem_id} not found.')
+            logging.error(f'Poem with ID {poem_id} not found. 🪰')
             return jsonify({'error': 'Poem not found.'}), 404
 
         # Validate and serialize poem information using PoemResponse schema
@@ -219,7 +220,7 @@ def submit_poem():
         return jsonify(poem_response.model_dump()), 201
 
     except JWTDecodeError:
-        return jsonify({'error': 'Invalid token. Please log in again.'}), 401
+        return jsonify({'error': 'Invalid token. Please log in again. ☔️'}), 401
 
     except ValidationError as e:
         return jsonify({'errors': e.errors()}), 400
@@ -271,7 +272,7 @@ def submit_collaborative_contribution():
     # Extract poet_id from the identity stored in the JWT token
     poet_id = jwt_identity.get('poet_id')
     if not poet_id:
-        return jsonify({'error': 'Invalid token data. Please log in again.'}), 401
+        return jsonify({'error': 'Invalid token data. Please log in again. 🍄'}), 401
 
     try:
         # Validate the incoming data using the PoemDetailsCreate schema
@@ -281,7 +282,7 @@ def submit_collaborative_contribution():
 
         if not poem:
             logging.error('Poem not found when fetching by ID.')
-            return jsonify({'error': 'Poem not found.'}), 404
+            return jsonify({'error': 'Poem not found. ✨'}), 404
 
         # Authorization: Ensure the user is allowed to submit content for this poem
         if not is_authorized_poet(poem, poet_id):
@@ -291,7 +292,7 @@ def submit_collaborative_contribution():
         if poem.is_collaborative:
             return process_collaborative_poem(poem, poem_details_data, poet_id)
         else:
-            return jsonify({'error': 'This is not a collaborative poem.'}), 400
+            return jsonify({'error': 'This is not a collaborative poem. 🐋'}), 400
 
     except ValidationError as e:
         logging.error(f"Validation error: {e.errors()}")
@@ -311,9 +312,77 @@ def submit_collaborative_contribution():
 @jwt_required()
 def edit_poem(poem_id):
     """
-    Handle fetching current poem data (GET) and updating poem data (POST).
+    This route allows:
+    - GET: Fetching the existing poem's metadata and content for editing.
+    - POST: Editing and saving the poem's metadata and content.
     """
-    pass
+    try:
+        poet = get_current_poet()
+        if not poet:
+            return jsonify({'error': 'Poet(esse) not found. 🏄‍♀️'}), 404
+
+        # Debugging: Fetch and log poem and its details
+        poem = get_full_poem_by_id(poem_id)
+        if poem:
+            print(f"DEBUG: Poem fetched: {poem.to_dict()}")
+        else:
+            print("DEBUG: Poem not found.")
+        
+        if poem.poet_id != poet.id:
+            return jsonify({'error': 'You do not have permission to edit this poem. 🍫'}), 403
+
+        # Fetch poem details for display in edit form
+        if request.method == 'GET':
+            db.session.refresh(poem)
+
+            poem_response = poem.to_dict()  # Using to_dict for debugging
+            print(f"DEBUG: Full poem dictionary: {poem_response}")
+            return jsonify(poem_response), 200
+            # poem_response = PoemResponse.model_validate(poem)
+            # return jsonify(poem_response.model_dump()), 200
+
+        # Update poem data
+        elif request.method == 'POST':
+            poem_update_data = PoemUpdate(**request.json)
+
+            # Update poem fields if provided
+            if poem_update_data.title is not None:
+                poem.title = poem_update_data.title
+            if poem_update_data.poem_type_id is not None:
+                poem.poem_type_id = poem_update_data.poem_type_id
+            poem.updated_at = datetime.now(timezone.utc)
+
+            # Handle details update
+            if poem_update_data.details:
+                # Clear existing details if needed
+                PoemDetails.query.filter_by(poem_id=poem_id).delete()
+
+                for details_data in poem_update_data.details:
+                    new_details = PoemDetails(
+                        poem_id=poem_id,
+                        poet_id=poem.poet_id,
+                        content=details_data.content,
+                        submitted_at=datetime.now(timezone.utc)
+                    )
+                    db.session.add(new_details)
+
+            db.session.commit()
+            db.session.refresh(poem)
+
+            # Debugging output to verify details are present
+            print(f"DEBUG: Poem details on POST after update: {[d.to_dict() for d in poem.poem_details]}")
+
+            poem_response = PoemResponse.model_validate(poem)
+            return jsonify(poem_response.model_dump()), 200
+
+    except ValidationError as e:
+        logging.error(f"Validation error: {e.errors()}")
+        return jsonify({'errors': e.errors()}), 400
+
+    except Exception as e:
+            logging.error(f"Error editing poem: {str(e)}")
+            db.session.rollback()
+            return jsonify({'status': 'error', 'message': f'An error occurred: {str(e)}'}), 500 
 
 
 @routes.route('/delete-poem/<int:poem_id>', methods=['POST'])
@@ -325,21 +394,21 @@ def delete_poem(poem_id):
     try:
         poet = get_current_poet()
         if not poet:
-            return jsonify({'error': 'Poet(esse) not found.'}), 404
+            return jsonify({'error': 'Poet(esse) not found. 🏄‍♀️'}), 404
         
         poem = get_poem_by_id(poem_id)
         if not poem:
-            return jsonify({'error': 'Poem not found.'}), 404
+            return jsonify({'error': 'Poem not found. Maybe try again?'}), 404
         
         # Authorization check
         if poem.poet_id != poet.id:
-            return jsonify({'error': 'You do not have permission to delete this poem.'}), 403
+            return jsonify({'error': 'You do not have permission to delete this poem. 🍽'}), 403
 
         # Delete the poem and commit changes
         db.session.delete(poem)
         db.session.commit()
 
-        return jsonify({'status': 'success', 'message': 'Poem deleted successfully.'}), 200
+        return jsonify({'status': 'success', 'message': 'Poem deleted successfully. More room for new poems. 🍇'}), 200
 
     except Exception as e:
         logging.error(f"Error deleting poem: {str(e)}")
