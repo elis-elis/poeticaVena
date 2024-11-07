@@ -27,6 +27,7 @@ class PoemDetailsCreate(BaseModel):
 
 
 class PoemDetailsUpdate(BaseModel):
+    id: Optional[int] = None
     content: Optional[str] = None
 
 

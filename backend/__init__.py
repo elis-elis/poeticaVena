@@ -1,3 +1,17 @@
+"""
+In this setup:
+- Migrate Initialization: 
+You’re initializing Flask-Migrate by passing both the app and the db to it, which is essential for linking the database and the migration utility.
+- Blueprints:
+You’re correctly using blueprints for modular routes and registering them within create_app, keeping your application organized.
+- App Context:
+The use of with app.app_context() ensures that any functions needing the application context, like initialize_poem_types(), can be safely run.
+- Database Creation Check:
+Calling create_database(app) ensures the database exists when the app is initialized.
+- Config and Logging:
+Setting up configuration and logging inside create_app makes the code reusable across different environments (development, production).
+"""
+
 from flask import Flask, jsonify
 import logging
 from flask_jwt_extended import JWTManager, jwt_required, get_jwt_identity
@@ -5,6 +19,7 @@ from config import Config
 from .database import db, create_database
 from .data_utils import initialize_poem_types
 from backend.data_utils import initialize_poem_types
+# from flask_migrate import Migrate
 
 
 def create_app():
@@ -20,6 +35,8 @@ def create_app():
     app.config['DEBUG'] = True
 
     db.init_app(app)
+
+    # migrate = Migrate(app, db)  # Bind Migrate to app and db
 
     from .auth import auth
     from .routes import routes

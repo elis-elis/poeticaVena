@@ -406,7 +406,7 @@ def edit_poem(poem_id):
             return jsonify({'status': 'error', 'message': f'An error occurred: {str(e)}'}), 500 
 
 
-@routes.route('/delete-poem/<int:poem_id>', methods=['POST'])
+@routes.route('/delete-poem/<int:poem_id>', methods=['DELETE'])
 @jwt_required()
 def delete_poem(poem_id):
     """
@@ -421,15 +421,19 @@ def delete_poem(poem_id):
         if not poem:
             return jsonify({'error': 'Poem not found. Maybe try again?'}), 404
         
+        # Check if the poem is collaborative and deny deletion if it is
+        if poem.is_collaborative:
+            return jsonify({'error': 'Sorry, dear, but collaborative poems cannot be deleted by a single poet. 🐯'}), 403
+        
         # Authorization check
         if poem.poet_id != poet.id:
-            return jsonify({'error': 'You do not have permission to delete this poem. 🍽'}), 403
+            return jsonify({'error': 'oh, but you do not have permission to delete this poem. 🍽'}), 403
 
         # Delete the poem and commit changes
         db.session.delete(poem)
         db.session.commit()
 
-        return jsonify({'status': 'success', 'message': 'Poem deleted successfully. More room for new poems. 🍇'}), 200
+        return jsonify({'status': 'success', 'message': 'Poem  deleted successfully. More room for new (sexy) poems. 🍇'}), 200
 
     except Exception as e:
         logging.error(f"Error deleting poem: {str(e)}")

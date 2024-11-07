@@ -27,7 +27,7 @@ class Poem(db.Model):
     created_at = db.Column(db.DateTime(timezone=True), default=func.now())
     updated_at = db.Column(db.DateTime(timezone=True), onupdate=func.now())
     # One-to-one or one-to-many relationship with PoemDetails
-    poem_details = db.relationship('PoemDetails', backref='poem', lazy=True, passive_deletes=True)
+    poem_details = db.relationship('PoemDetails', backref='poem', lazy=True, cascade="all, delete-orphan")
     def to_dict(self):
         # Convert object to dictionary and handle nested relationships
         poem_dict = {key: value for key, value in self.__dict__.items() if not key.startswith('_')}
@@ -52,7 +52,7 @@ class PoemDetails(db.Model):
     __tablename__ = 'poem_details'
 
     id = db.Column(db.Integer, primary_key=True)
-    poem_id = db.Column(db.Integer, db.ForeignKey('poems.id'), nullable=False)
+    poem_id = db.Column(db.Integer, db.ForeignKey('poems.id', ondelete='CASCADE'), nullable=False)
     poet_id = db.Column(db.Integer, db.ForeignKey('poets.id'), nullable=False)
     content = db.Column(db.Text, nullable=False)
     submitted_at = db.Column(db.DateTime(timezone=True), default=func.now())
