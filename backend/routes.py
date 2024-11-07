@@ -67,6 +67,17 @@ def get_poets():
         return jsonify({'error': f'An error occurred: {str(e)}'}), 500
 
 
+@routes.route('/get-poem2', methods=['GET'])
+@jwt_required()
+def get_poem2():
+    poem = get_poem_by_id(49)  # Assume this returns a SQLAlchemy model instance
+    poem_dict = poem.to_dict()  # Convert the SQLAlchemy model to a dictionary
+
+    # Use Pydantic's .model_validate() to create a PoemResponse instance
+    poem_response = PoemResponse.model_validate(poem_dict)
+    return jsonify(poem_response.model_dump())
+
+
 @routes.route('/get-poem/<int:poem_id>', methods=['GET'])
 @jwt_required()
 def get_poem(poem_id):
@@ -82,6 +93,7 @@ def get_poem(poem_id):
 
         # Validate and serialize poem information using PoemResponse schema
         poem_data = PoemResponse.model_validate(poem).model_dump()
+        print(f"get_poem:", poem_data)
 
         # Fetch contributions for the poem
         poem_contributions = fetch_poem_lines(poem_id)
@@ -308,7 +320,7 @@ def submit_collaborative_contribution():
         return jsonify({'error': f'An error occurred: {str(e)}'}), 500
 
 
-@routes.route('/edit-poem/<int:poem_id>', methods=['GET', 'POST'])
+@routes.route('/edit-poem/<int:poem_id>', methods=['GET', 'PUT'])
 @jwt_required()
 def edit_poem(poem_id):
     """
@@ -322,7 +334,7 @@ def edit_poem(poem_id):
             return jsonify({'error': 'Poet(esse) not found. 🏄‍♀️'}), 404
 
         # Debugging: Fetch and log poem and its details
-        poem = get_full_poem_by_id(poem_id)
+        poem = get_poem_by_id(poem_id)
         if poem:
             print(f"DEBUG: Poem fetched: {poem.to_dict()}")
         else:
@@ -335,14 +347,14 @@ def edit_poem(poem_id):
         if request.method == 'GET':
             db.session.refresh(poem)
 
-            poem_response = poem.to_dict()  # Using to_dict for debugging
+            poem_response = poem.to_dict()  # Convert the SQLAlchemy model to a dictionary
             print(f"DEBUG: Full poem dictionary: {poem_response}")
-            return jsonify(poem_response), 200
-            # poem_response = PoemResponse.model_validate(poem)
-            # return jsonify(poem_response.model_dump()), 200
-
+            # return jsonify(poem_response), 200
+            poem_response = PoemResponse.model_validate(poem_response)
+            return jsonify(poem_response.model_dump()), 200
+    
         # Update poem data
-        elif request.method == 'POST':
+        elif request.method == 'PUT':
             poem_update_data = PoemUpdate(**request.json)
 
             # Update poem fields if provided
@@ -369,10 +381,12 @@ def edit_poem(poem_id):
             db.session.commit()
             db.session.refresh(poem)
 
+            poem_dict = poem.to_dict()
+
             # Debugging output to verify details are present
             print(f"DEBUG: Poem details on POST after update: {[d.to_dict() for d in poem.poem_details]}")
 
-            poem_response = PoemResponse.model_validate(poem)
+            poem_response = PoemResponse.model_validate(poem_dict)
             return jsonify(poem_response.model_dump()), 200
 
     except ValidationError as e:

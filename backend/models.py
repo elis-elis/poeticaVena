@@ -31,7 +31,7 @@ class Poem(db.Model):
     def to_dict(self):
         # Convert object to dictionary and handle nested relationships
         poem_dict = {key: value for key, value in self.__dict__.items() if not key.startswith('_')}
-        poem_dict.pop('poem_details', None)
+        # poem_dict.pop('poem_details', None)
         poem_dict['details'] = [detail.to_dict() for detail in self.poem_details]
         return poem_dict
 
@@ -58,11 +58,11 @@ class PoemDetails(db.Model):
     submitted_at = db.Column(db.DateTime(timezone=True), default=func.now())
     def to_dict(self):
         # Convert to dictionary, removing SQLAlchemy attributes
-        # return {key: value for key, value in self.__dict__.items() if not key.startswith('_')}
-        return {
-            'id': self.id,
-            'poem_id': self.poem_id,
-            'poet_id': self.poet_id,
-            'content': self.content,
-            'submitted_at': self.submitted_at.isoformat() if self.submitted_at else None
-        }
+        return {key: value for key, value in self.__dict__.items() if not key.startswith('_')}
+        # return {
+            # 'id': self.id,
+            # 'poem_id': self.poem_id,
+            # 'poet_id': self.poet_id,
+            # 'content': self.content,
+            # 'submitted_at': self.submitted_at.isoformat() if self.submitted_at else None
+        # }
