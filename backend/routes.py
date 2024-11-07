@@ -70,7 +70,7 @@ def get_poets():
 @routes.route('/get-poem2', methods=['GET'])
 @jwt_required()
 def get_poem2():
-    poem = get_poem_by_id(49)  # Assume this returns a SQLAlchemy model instance
+    poem = get_poem_by_id(55)  # Assume this returns a SQLAlchemy model instance
     poem_dict = poem.to_dict()  # Convert the SQLAlchemy model to a dictionary
 
     # Use Pydantic's .model_validate() to create a PoemResponse instance
@@ -92,20 +92,21 @@ def get_poem(poem_id):
             return jsonify({'error': 'Poem not found.'}), 404
 
         # Validate and serialize poem information using PoemResponse schema
-        poem_data = PoemResponse.model_validate(poem).model_dump()
-        print(f"get_poem:", poem_data)
+        poem_data = poem.to_dict()
+        poem_response = PoemResponse.model_validate(poem_data)
+        print(f"get_poem:", poem_response)
 
         # Fetch contributions for the poem
-        poem_contributions = fetch_poem_lines(poem_id)
-        full_poem_text = "\n".join([contribution.content for contribution in poem_contributions])
+        #poem_contributions = fetch_poem_lines(poem_id)
+        #full_poem_text = "\n".join([contribution.content for contribution in poem_contributions])
 
         # Prepare response data
-        response_data = {
-            'poem': poem_data,   # Main poem information
-            'contributions': full_poem_text
-        }
+        #response_data = {
+            #'poem': poem_data,   # Main poem information
+            #'contributions': full_poem_text
+        #}
 
-        return jsonify(response_data), 200
+        return jsonify(poem_response.model_dump()), 200
 
     except Exception as e:
         logging.error(f"Error fetching poem with ID {poem_id}: {str(e)}")
@@ -333,12 +334,10 @@ def edit_poem(poem_id):
         if not poet:
             return jsonify({'error': 'Poet(esse) not found. 🏄‍♀️'}), 404
 
-        # Debugging: Fetch and log poem and its details
+        # Fetch the poem by ID, ensuring it exists and is owned by the poet
         poem = get_poem_by_id(poem_id)
-        if poem:
-            print(f"DEBUG: Poem fetched: {poem.to_dict()}")
-        else:
-            print("DEBUG: Poem not found.")
+        if not poem:
+            return jsonify({'error': 'Poem not found.'}), 404
         
         if poem.poet_id != poet.id:
             return jsonify({'error': 'You do not have permission to edit this poem. 🍫'}), 403
@@ -353,7 +352,7 @@ def edit_poem(poem_id):
             poem_response = PoemResponse.model_validate(poem_response)
             return jsonify(poem_response.model_dump()), 200
     
-        # Update poem data
+        # Handle PUT request to update poem metadata and details
         elif request.method == 'PUT':
             poem_update_data = PoemUpdate(**request.json)
 
@@ -364,29 +363,37 @@ def edit_poem(poem_id):
                 poem.poem_type_id = poem_update_data.poem_type_id
             poem.updated_at = datetime.now(timezone.utc)
 
-            # Handle details update
+            # Update existing PoemDetails entries
             if poem_update_data.details:
                 # Clear existing details if needed
-                PoemDetails.query.filter_by(poem_id=poem_id).delete()
+                # PoemDetails.query.filter_by(poem_id=poem_id).delete()
+
+                # Map current poem details by ID for efficient updates
+                existing_details = {detail.id: detail for detail in poem.poem_details}
 
                 for details_data in poem_update_data.details:
-                    new_details = PoemDetails(
-                        poem_id=poem_id,
-                        poet_id=poem.poet_id,
-                        content=details_data.content,
-                        submitted_at=datetime.now(timezone.utc)
-                    )
-                    db.session.add(new_details)
+                    if details_data.id and details_data.id in existing_details:
+                        # Update content of each existing detail as provided
+                        existing_detail = existing_details[details_data.id]
+                        existing_detail.content = details_data.content
+                        existing_detail.submitted_at = datetime.now(timezone.utc)
+                    # new_details = PoemDetails(
+                        # poem_id=poem_id,
+                        # poet_id=poem.poet_id,
+                        # content=details_data.content,
+                        # submitted_at=datetime.now(timezone.utc)
+                    # )
+                    # db.session.add(new_details)
 
             db.session.commit()
             db.session.refresh(poem)
 
-            poem_dict = poem.to_dict()
+            updated_poem_response = poem.to_dict()
 
             # Debugging output to verify details are present
             print(f"DEBUG: Poem details on POST after update: {[d.to_dict() for d in poem.poem_details]}")
 
-            poem_response = PoemResponse.model_validate(poem_dict)
+            poem_response = PoemResponse.model_validate(updated_poem_response)
             return jsonify(poem_response.model_dump()), 200
 
     except ValidationError as e:
