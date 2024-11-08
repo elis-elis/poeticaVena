@@ -1,6 +1,7 @@
 from .database import db
 from flask_login import UserMixin
 from sqlalchemy.sql import func
+from sqlalchemy import UniqueConstraint
 
 
 class Poet(db.Model, UserMixin):
@@ -28,10 +29,10 @@ class Poem(db.Model):
     updated_at = db.Column(db.DateTime(timezone=True), onupdate=func.now())
     # One-to-one or one-to-many relationship with PoemDetails
     poem_details = db.relationship('PoemDetails', backref='poem', lazy=True, cascade="all, delete-orphan")
+    __table_args__ = (UniqueConstraint('title', 'poet_id', name='_poem_title_poet_uc'),)
     def to_dict(self):
         # Convert object to dictionary and handle nested relationships
         poem_dict = {key: value for key, value in self.__dict__.items() if not key.startswith('_')}
-        # poem_dict.pop('poem_details', None)
         poem_dict['details'] = [detail.to_dict() for detail in self.poem_details]
         return poem_dict
 
@@ -46,6 +47,7 @@ class PoemType(db.Model):
     # One-to-many relationship with Poem
     poem = db.relationship('Poem', backref='poem_type', lazy=True)
 
+
 class PoemDetails(db.Model):
     # Handles contributions, from a single poet or multiple poets for collaborative poems. 
     # It holds the poem's content and tracks when it was submitted.
@@ -59,10 +61,3 @@ class PoemDetails(db.Model):
     def to_dict(self):
         # Convert to dictionary, removing SQLAlchemy attributes
         return {key: value for key, value in self.__dict__.items() if not key.startswith('_')}
-        # return {
-            # 'id': self.id,
-            # 'poem_id': self.poem_id,
-            # 'poet_id': self.poet_id,
-            # 'content': self.content,
-            # 'submitted_at': self.submitted_at.isoformat() if self.submitted_at else None
-        # }

@@ -2,6 +2,7 @@ from datetime import datetime, timezone
 from flask import Blueprint, jsonify, request
 from flask_jwt_extended import jwt_required, get_jwt_identity
 from pydantic import ValidationError
+from sqlalchemy.exc import IntegrityError
 from .models import Poem, PoemType
 from .database import db
 from .schemas import PoemCreate, PoemTypeResponse, PoemResponse, PoemDetailsCreate, PoemUpdate, PoetResponse
@@ -39,7 +40,7 @@ def get_poets():
     try:
         # Get pagination parameters from the query string
         page = request.args.get('page', type=int, default=1)
-        per_page = request.args.get('per_page', type=int, default=10)
+        per_page = request.args.get('per_page', type=int, default=8)
 
         # Fetch poets with pagination
         poets_query = get_all_poets_query()
@@ -94,22 +95,59 @@ def get_poem(poem_id):
         # Validate and serialize poem information using PoemResponse schema
         poem_data = poem.to_dict()
         poem_response = PoemResponse.model_validate(poem_data)
-        print(f"get_poem:", poem_response)
-
-        # Fetch contributions for the poem
-        #poem_contributions = fetch_poem_lines(poem_id)
-        #full_poem_text = "\n".join([contribution.content for contribution in poem_contributions])
-
-        # Prepare response data
-        #response_data = {
-            #'poem': poem_data,   # Main poem information
-            #'contributions': full_poem_text
-        #}
 
         return jsonify(poem_response.model_dump()), 200
 
     except Exception as e:
         logging.error(f"Error fetching poem with ID {poem_id}: {str(e)}")
+        return jsonify({'error': f'An error occurred: {str(e)}'}), 500
+
+
+@routes.route('/get-poems2', methods=['GET'])
+@jwt_required()
+def get_poems2():
+    is_collaborative = request.args.get('is_collaborative')
+    page = request.args.get('page', type=int, default=1)
+    per_page = request.args.get('per_page', type=int, default=5)
+    poem_type_id = request.args.get('poem_type_id', type=int)
+    poet_id = request.args.get('poet_id', type=int)
+    title = request.args.get('title')
+
+    try:
+        query = db.session.query(Poem)
+        # Apply filtering based on collaborative status
+        if is_collaborative is not None and is_collaborative.lower() == 'true':
+            # Show only active collaborative poems (not published yet)
+            query = query.filter(Poem.is_collaborative == True, Poem.is_published == False)
+        if poem_type_id:
+            query = query.filter(Poem.poem_type_id == poem_type_id)
+        if poet_id:
+            query = query.filter(Poem.poet_id == poet_id)
+        if title:
+            query = query.filter(Poem.title.ilike(f"%{title}%"))
+        else:
+            # Show only published poems
+            query = query.filter(Poem.is_published == True)
+
+        # Paginate the results
+        poems_paginated = query.paginate(page=page, per_page=per_page, error_out=False)
+
+        # Build response data for each poem, using the Poem model's `to_dict` method
+        poems_response = [poem.to_dict() for poem in poems_paginated.items]
+
+        # Prepare pagination metadata
+        response_data = {
+            'total': poems_paginated.total,
+            'page': poems_paginated.page,
+            'per_page': poems_paginated.per_page,
+            'total_pages': poems_paginated.pages,
+            'poems': poems_response
+        }
+
+        return jsonify(response_data), 200
+    
+    except Exception as e:
+        logging.error(f"Error fetching paginated poems: {str(e)}")
         return jsonify({'error': f'An error occurred: {str(e)}'}), 500
 
 
@@ -129,7 +167,7 @@ def get_poems():
     # Fetch query parameters for filtering and pagination
     is_collaborative = request.args.get('is_collaborative')
     page = request.args.get('page', type=int, default=1)
-    per_page = request.args.get('per_page', type=int, default=10)
+    per_page = request.args.get('per_page', type=int, default=5)
 
     try:
         query = db.session.query(Poem)
@@ -203,10 +241,12 @@ def submit_poem():
         # Validate incoming JSON data using PoemCreate Pydantic model
         poem_data = PoemCreate(**request.json)
 
-        print(poem_data)
-
         # Set `is_published` based on whether the poem is collaborative
         is_published = not poem_data.is_collaborative
+
+        existing_poem = db.session.query(Poem).filter_by(title=poem_data.title, poet_id=poet.id).first()
+        if existing_poem:
+            return jsonify({'error': 'Ah! 🍒 You already have a poem with this title. Please choose a different one.'}), 400
 
         # Create and save the poem to the database
         new_poem = Poem(
@@ -237,6 +277,10 @@ def submit_poem():
 
     except ValidationError as e:
         return jsonify({'errors': e.errors()}), 400
+    
+    except IntegrityError:
+        db.session.rollback()
+        return jsonify({'error': 'You already have a poem with this title. Please choose a different one.'}), 400
     
     except Exception as e:
         db.session.rollback()
@@ -321,7 +365,7 @@ def submit_collaborative_contribution():
         return jsonify({'error': f'An error occurred: {str(e)}'}), 500
 
 
-@routes.route('/edit-poem/<int:poem_id>', methods=['GET', 'PUT'])
+@routes.route('/edit-poem/<int:poem_id>', methods=['GET', 'PATCH'])
 @jwt_required()
 def edit_poem(poem_id):
     """
@@ -355,7 +399,7 @@ def edit_poem(poem_id):
             return jsonify(poem_response.model_dump()), 200
     
         # Handle PUT request to update poem metadata and details
-        elif request.method == 'PUT':
+        elif request.method == 'PATCH':
             poem_update_data = PoemUpdate(**request.json)
 
             # Update poem fields if provided
