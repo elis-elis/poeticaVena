@@ -1,12 +1,12 @@
-from datetime import datetime, timedelta, timezone
+from datetime import datetime, timezone
 from flask import Blueprint, jsonify, request
 from flask_jwt_extended import jwt_required, get_jwt_identity
 from pydantic import ValidationError
-from .models import Poem, PoemDetails, PoemType
+from .models import Poem, PoemType
 from .database import db
 from .schemas import PoemCreate, PoemTypeResponse, PoemResponse, PoemDetailsCreate, PoemUpdate, PoetResponse
 from .submit_poem_details import process_individual_poem, process_collaborative_poem, is_authorized_poet
-from .poem_utils import fetch_poem_lines, get_full_poem_by_id, get_poem_by_id
+from .poem_utils import get_poem_by_id
 from .poet_utils import get_all_poets_query, get_current_poet
 import logging
 from flask_jwt_extended.exceptions import JWTDecodeError
@@ -89,7 +89,7 @@ def get_poem(poem_id):
         poem = get_poem_by_id(poem_id)
         if not poem:
             logging.error(f'Poem with ID {poem_id} not found. 🪰')
-            return jsonify({'error': 'Poem not found.'}), 404
+            return jsonify({'error': 'Poem not found. 🌛'}), 404
 
         # Validate and serialize poem information using PoemResponse schema
         poem_data = poem.to_dict()
@@ -198,7 +198,7 @@ def submit_poem():
         # Find the poet by their email (whoch is stored in the token)
         poet = get_current_poet()
         if not poet:
-            return jsonify({'error': 'Poet not found.'}), 404
+            return jsonify({'error': 'Poet(esse) not found. 🦞'}), 404
 
         # Validate incoming JSON data using PoemCreate Pydantic model
         poem_data = PoemCreate(**request.json)
@@ -299,7 +299,7 @@ def submit_collaborative_contribution():
 
         # Authorization: Ensure the user is allowed to submit content for this poem
         if not is_authorized_poet(poem, poet_id):
-            return jsonify({'error': 'You are not authorized to submit content for this poem. 🍳'}), 403
+            return jsonify({'error': 'Unfortunately (or fortunately) you are not authorized to submit content for this poem. 🍳'}), 403
         
         # If the poem is collaborative, proceed to process the contribution
         if poem.is_collaborative:
@@ -342,7 +342,7 @@ def edit_poem(poem_id):
         # Check if the poem is owned by the current poet (for individual poems)
         # OR if it's a collaborative poem, allow only editing specific contributions
         if poem.poet_id != poet.id and not poem.is_collaborative:
-            return jsonify({'error': 'You do not have permission to edit this poem. 🍫'}), 403
+            return jsonify({'error': 'This is not your poem, therefore you do not have permission to edit this poem. 🍫'}), 403
 
         # Fetch poem details for display in edit form
         if request.method == 'GET':

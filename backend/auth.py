@@ -1,7 +1,7 @@
 from flask import Blueprint, request, jsonify, make_response
 from .database import db
 from werkzeug.security import generate_password_hash, check_password_hash
-from flask_jwt_extended import create_access_token, create_refresh_token, jwt_required, get_jwt_identity
+from flask_jwt_extended import create_access_token, create_refresh_token, jwt_required, get_jwt_identity, unset_jwt_cookies
 from .models import Poet
 from .schemas import PoetCreate, PoetResponse
 from datetime import timedelta
@@ -72,7 +72,7 @@ def refresh():
     # Fetch the poet by email to get the poet_id (using the function we created)
     poet = get_current_poet()
     if not poet:
-        return jsonify({'error': 'Poet not found.'}), 404
+        return jsonify({'error': 'Poet(esse) not found. 🌴'}), 404
 
     # Generate a new access token with both poet_id and email in the identity
     new_access_token = create_access_token(identity={'poet_id': poet.id}, expires_delta=timedelta(hours=1))
@@ -83,9 +83,16 @@ def refresh():
 @auth.route('/logout', methods=['POST'])
 def logout():
     """
-    Logs the user out and returns JSON response.
+    Logs the user out by clearing the refresh token cookie and unsetting JWT cookies.
+    unset_jwt_cookies(response):
+        This method removes any access tokens from cookies if they were set using set_access_cookies.
+    Clearing the refresh_token cookie:
+        Sets the refresh_token cookie to an empty value with an expired timestamp, effectively removing it from the client.
     """
-    return jsonify({'message': 'Logged out successfully! 🌈'}), 200
+    response = jsonify({'message': 'Logged out successfully! 🌈'})
+    unset_jwt_cookies(response)
+    response.set_cookie('refresh_token', '', expires=0, httponly=True, secure=True, samesite='Lax')
+    return response
 
 
 @auth.route('/register', methods=['POST'])
