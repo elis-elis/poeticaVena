@@ -39,9 +39,6 @@ def fetch_haiku_validation_from_ai(poem_line, line_number):
     If the line exactly meets the required syllable count, respond with only 'Pass'.
     If it does not, respond with 'Fail' and explain the syllable count in one concise sentence, noting the total syllables you counted.
     """
-    print("°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°")
-    print(prompt)
-    print("°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°")
 
     return make_ai_request(prompt)
 

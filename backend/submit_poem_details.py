@@ -8,7 +8,7 @@ from .database import db
 from .models import PoemDetails
 from .schemas import PoemDetailsResponse
 from .poem_utils import get_poem_by_id, get_poem_type_by_id, get_poem_contributions
-from backend.poetry_validators.free_verse import handle_free_verse
+from backend.poetry_validators.free_verse import handle_free_verse, handle_free_verse_new
 from backend.poetry_validators.haiku import handle_haiku
 # from backend.poetry_validators.nonet import handle_nonet
 # import logging
@@ -96,7 +96,7 @@ def process_collaborative_poem(poem, poem_details_data, poet_id):
 
     # Step 2: Check if the poem is already completed (published)
     if poem.is_published:
-        return jsonify({'error': 'The poem is already completed and no more contributions can be made. 🌻'}), 400
+        return jsonify({'error': 'The poem is already completed and no more contributions can be made. 🌻 But you can write some new stuff (always).'}), 400
 
     # Step 3: Fetch existing contributions
     existing_contributions_data = get_poem_contributions(poem.id)
@@ -118,7 +118,7 @@ def process_collaborative_poem(poem, poem_details_data, poet_id):
 
     # Delegate control to specific poem type handlers (Haiku, Free Verse, etc.)
     if poem_type.name == "Free Verse":
-        return handle_free_verse(existing_contributions, current_poem_content, poem, poem_details_data, poet_id)
+        return handle_free_verse_new(existing_contributions, current_poem_content, poem, poem_details_data, poet_id)
     elif poem_type.name == "Haiku":
         return handle_haiku(existing_contributions, current_poem_content, poem, poem_details_data, poet_id)
     # elif poem_type.name == "Nonet":
