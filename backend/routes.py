@@ -339,7 +339,9 @@ def edit_poem(poem_id):
         if not poem:
             return jsonify({'error': 'Poem not found.'}), 404
         
-        if poem.poet_id != poet.id:
+        # Check if the poem is owned by the current poet (for individual poems)
+        # OR if it's a collaborative poem, allow only editing specific contributions
+        if poem.poet_id != poet.id and not poem.is_collaborative:
             return jsonify({'error': 'You do not have permission to edit this poem. 🍫'}), 403
 
         # Fetch poem details for display in edit form
@@ -365,9 +367,6 @@ def edit_poem(poem_id):
 
             # Update existing PoemDetails entries
             if poem_update_data.details:
-                # Clear existing details if needed
-                # PoemDetails.query.filter_by(poem_id=poem_id).delete()
-
                 # Map current poem details by ID for efficient updates
                 existing_details = {detail.id: detail for detail in poem.poem_details}
 
@@ -375,23 +374,20 @@ def edit_poem(poem_id):
                     if details_data.id and details_data.id in existing_details:
                         # Update content of each existing detail as provided
                         existing_detail = existing_details[details_data.id]
+
+                        # Logic for Collaborative Poems
+                        # Allow editing only if the current user is the contributor
+                        if poem.is_collaborative and existing_detail.poet_id != poet.id:
+                            continue    # Skip if the current user is not the contributor
+
+                        # Update the content of each existing detail if the poet is authorized
                         existing_detail.content = details_data.content
                         existing_detail.submitted_at = datetime.now(timezone.utc)
-                    # new_details = PoemDetails(
-                        # poem_id=poem_id,
-                        # poet_id=poem.poet_id,
-                        # content=details_data.content,
-                        # submitted_at=datetime.now(timezone.utc)
-                    # )
-                    # db.session.add(new_details)
 
             db.session.commit()
             db.session.refresh(poem)
 
             updated_poem_response = poem.to_dict()
-
-            # Debugging output to verify details are present
-            print(f"DEBUG: Poem details on POST after update: {[d.to_dict() for d in poem.poem_details]}")
 
             poem_response = PoemResponse.model_validate(updated_poem_response)
             return jsonify(poem_response.model_dump()), 200
