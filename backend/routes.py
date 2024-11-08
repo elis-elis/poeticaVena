@@ -220,6 +220,58 @@ def get_poem_types():
     return jsonify(poem_types_response), 200
 
 
+@routes.route('/submit-poem2', methods=['POST'])
+@jwt_required()
+def submit_poem2():
+    try:
+        # Find the poet by their email (whoch is stored in the token)
+        poet = get_current_poet()
+        if not poet:
+            return jsonify({'error': 'Poet(esse) not found. 🦞'}), 404
+
+        # Validate incoming JSON data using PoemCreate Pydantic model
+        poem_data = PoemCreate(**request.json)
+
+        existing_poem = db.session.query(Poem).filter_by(title=poem_data.title, poet_id=poet.id).first()
+        if existing_poem:
+            return jsonify({'error': 'Ah! 🍒 You already have a poem with this title. Please choose a different one.'}), 400
+
+        # Create and save the poem to the database
+        new_poem = Poem(
+            title=poem_data.title,
+            poem_type_id=poem_data.poem_type_id,
+            is_collaborative=poem_data.is_collaborative,
+            poet_id=poet.id,  # Associate the poem with the currently logged-in poet
+            is_published=False  # Always set is_published to False on creation
+        )
+
+        db.session.add(new_poem)
+        db.session.commit()
+        db.session.refresh(new_poem)
+
+        # Manually print the new_poem fields
+        print("New Poem created:", new_poem.id, new_poem.title, new_poem.created_at)
+
+        # Use PoemResponse Pydantic model to return the poem data
+        poem_response = PoemResponse.model_validate(new_poem)
+
+        return jsonify(poem_response.model_dump()), 201
+
+    except JWTDecodeError:
+        return jsonify({'error': 'Invalid token. Please log in again. ☔️'}), 401
+
+    except ValidationError as e:
+        return jsonify({'errors': e.errors()}), 400
+    
+    except IntegrityError:
+        db.session.rollback()
+        return jsonify({'error': 'You already have a poem with this title. Please choose a different one.'}), 400
+    
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'error': f'An error occurred: {str(e)}'}), 500
+
+
 @routes.route('/submit-poem', methods=['POST'])
 @jwt_required()
 def submit_poem():
@@ -293,9 +345,7 @@ def submit_individual_poem():
     """
     This route handles the full submission of a single, complete poem by one poet.
     """
-    jwt_identity = get_jwt_identity()  # Returns a dictionary with both poet_id and email
-
-    # Extract poet_id and email from the identity stored in the JWT token
+    jwt_identity = get_jwt_identity()
     poet_id = jwt_identity.get('poet_id')
 
     try:

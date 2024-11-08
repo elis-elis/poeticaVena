@@ -10,7 +10,7 @@ from .schemas import PoemDetailsResponse
 from .poem_utils import get_poem_by_id, get_poem_type_by_id, get_poem_contributions
 from backend.poetry_validators.free_verse import handle_free_verse
 from backend.poetry_validators.haiku import handle_haiku
-from backend.poetry_validators.nonet import handle_nonet
+# from backend.poetry_validators.nonet import handle_nonet
 # import logging
 
 
@@ -58,11 +58,11 @@ def process_individual_poem(poem_details_data):
     # Check if the poem entry exists for this individual poem
     existing_poem = get_poem_by_id(poem_details_data.poem_id)
     if not existing_poem:
-        return jsonify({'error': 'Poem does not exist.'}), 404
+        return jsonify({'error': 'Poem does not exist. 🍅 or not found.'}), 404
     
     # Ensure the poem is marked as non-collaborative
     if existing_poem.is_collaborative:
-        return jsonify({'error': 'This poem is collaborative; cannot submit as an individual poem.'}), 400
+        return jsonify({'error': 'This poem is collaborative and cannot be submitted as an individual poem. 🛼'}), 400
 
     # Save the individual poem content
     poem_details = PoemDetails(
@@ -71,6 +71,9 @@ def process_individual_poem(poem_details_data):
         content=poem_details_data.content
     )
     db.session.add(poem_details)
+
+    existing_poem.is_published = True
+
     db.session.commit()
 
     # Use PoemDetailsResponse to send back the details of the saved poem
@@ -118,7 +121,7 @@ def process_collaborative_poem(poem, poem_details_data, poet_id):
         return handle_free_verse(existing_contributions, current_poem_content, poem, poem_details_data, poet_id)
     elif poem_type.name == "Haiku":
         return handle_haiku(existing_contributions, current_poem_content, poem, poem_details_data, poet_id)
-    elif poem_type.name == "Nonet":
-        return handle_nonet(existing_contributions, current_poem_content, poem, poem_details_data, poet_id)
+    # elif poem_type.name == "Nonet":
+        # return handle_nonet(existing_contributions, current_poem_content, poem, poem_details_data, poet_id)
     
     return jsonify({'error': 'Poem type is not supported yet. 🌵'}), 400
