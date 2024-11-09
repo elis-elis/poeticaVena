@@ -234,7 +234,9 @@ def submit_poem2():
 
         existing_poem = db.session.query(Poem).filter_by(title=poem_data.title, poet_id=poet.id).first()
         if existing_poem:
-            return jsonify({'error': 'Ah! 🍒 You already have a poem with this title. Please choose a different one.'}), 400
+            return jsonify({
+                'error': 'Ah! 🍒 You already have a poem with this title. Please choose a different one.'
+            }), 400
 
         # Create and save the poem to the database
         new_poem = Poem(
@@ -265,7 +267,9 @@ def submit_poem2():
     
     except IntegrityError:
         db.session.rollback()
-        return jsonify({'error': 'You already have a poem with this title. Please choose a different one.'}), 400
+        return jsonify({
+            'error': 'You already have a poem with this title. Please choose a different one.'
+        }), 400
     
     except Exception as e:
         db.session.rollback()
@@ -298,7 +302,9 @@ def submit_poem():
 
         existing_poem = db.session.query(Poem).filter_by(title=poem_data.title, poet_id=poet.id).first()
         if existing_poem:
-            return jsonify({'error': 'Ah! 🍒 You already have a poem with this title. Please choose a different one.'}), 400
+            return jsonify({
+                'error': 'Ah! 🍒 You already have a poem with this title. Please choose a different one.'
+            }), 400
 
         # Create and save the poem to the database
         new_poem = Poem(
@@ -332,7 +338,9 @@ def submit_poem():
     
     except IntegrityError:
         db.session.rollback()
-        return jsonify({'error': 'You already have a poem with this title. Please choose a different one.'}), 400
+        return jsonify({
+            'error': 'You already have a poem with this title. Please choose a different one.'
+        }), 400
     
     except Exception as e:
         db.session.rollback()
@@ -372,7 +380,8 @@ def submit_individual_poem():
 @jwt_required()
 def submit_collaborative_contribution():
     """
-    This route handles the contribution of lines to a collaborative poem, with validation for contribution rules and poem progression.
+    This route handles the contribution of lines to a collaborative poem, 
+    with validation for contribution rules and poem progression.
     """
     jwt_identity = get_jwt_identity()
 
@@ -393,7 +402,9 @@ def submit_collaborative_contribution():
 
         # Authorization: Ensure the user is allowed to submit content for this poem
         if not is_authorized_poet(poem, poet_id):
-            return jsonify({'error': 'Unfortunately (or fortunately) you are not authorized to submit content for this poem. 🍳'}), 403
+            return jsonify({
+                'error': 'Unfortunately (or fortunately) you are not authorized to submit content for this poem. 🍳'
+            }), 403
         
         # If the poem is collaborative, proceed to process the contribution
         if poem.is_collaborative:
@@ -436,7 +447,9 @@ def edit_poem(poem_id):
         # Check if the poem is owned by the current poet (for individual poems)
         # OR if it's a collaborative poem, allow only editing specific contributions
         if poem.poet_id != poet.id and not poem.is_collaborative:
-            return jsonify({'error': 'This is not your poem, therefore you do not have permission to edit this poem. 🍫'}), 403
+            return jsonify({
+                'error': 'This is not your poem, therefore you do not have permission to edit this poem. 🍫'
+            }), 403
 
         # Fetch poem details for display in edit form
         if request.method == 'GET':
@@ -513,7 +526,9 @@ def delete_poem(poem_id):
         
         # Check if the poem is collaborative and deny deletion if it is
         if poem.is_collaborative:
-            return jsonify({'error': 'Sorry, dear, but collaborative poems cannot be deleted by a single poet. 🐯'}), 403
+            return jsonify({
+                'error': 'Sorry, dear, but collaborative poems cannot be deleted by a single poet. 🐯'
+            }), 403
         
         # Authorization check
         if poem.poet_id != poet.id:
@@ -523,7 +538,9 @@ def delete_poem(poem_id):
         db.session.delete(poem)
         db.session.commit()
 
-        return jsonify({'status': 'success', 'message': 'Poem  deleted successfully. More room for new (sexy) poems. 🍇'}), 200
+        return jsonify({
+            'status': 'success', 'message': 'Poem  deleted successfully. More room for new (sexy) poems. 🍇'
+        }), 200
 
     except Exception as e:
         logging.error(f"Error deleting poem: {str(e)}")

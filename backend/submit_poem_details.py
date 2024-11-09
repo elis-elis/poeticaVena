@@ -62,7 +62,9 @@ def process_individual_poem(poem_details_data):
     
     # Ensure the poem is marked as non-collaborative
     if existing_poem.is_collaborative:
-        return jsonify({'error': 'This poem is collaborative and cannot be submitted as an individual poem. 🛼'}), 400
+        return jsonify({
+            'error': 'This poem is collaborative and cannot be submitted as an individual poem. 🛼'
+        }), 400
 
     # Save the individual poem content
     poem_details = PoemDetails(
