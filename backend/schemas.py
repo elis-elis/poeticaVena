@@ -23,7 +23,8 @@ class PoemTypeResponse(PoemTypeCreate):
 class PoemDetailsCreate(BaseModel):
     poem_id: int
     poet_id: int
-    content: str = Field(..., min_length=5)
+    content: str = Field(..., min_length=1)
+    publish: Optional[bool] = False
 
 
 class PoemDetailsUpdate(BaseModel):

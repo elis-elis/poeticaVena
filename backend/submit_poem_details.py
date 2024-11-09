@@ -96,24 +96,30 @@ def process_collaborative_poem(poem, poem_details_data, poet_id):
 
     # Step 2: Check if the poem is already completed (published)
     if poem.is_published:
-        return jsonify({'error': 'The poem is already completed and no more contributions can be made. 🌻 But you can write some new stuff (always).'}), 400
+        return jsonify({
+            'error': 'The poem is already completed and no more contributions can be made. 🌻 But you can write some new stuff (always).'
+        }), 400
 
     # Step 3: Fetch existing contributions
     existing_contributions_data = get_poem_contributions(poem.id)
-    existing_contributions = [contribution.content for contribution in existing_contributions_data if contribution.content.strip()]  # Extract and filter out empty lines
+    existing_contributions = [
+        contribution.content for contribution in existing_contributions_data if contribution.content.strip()
+    ]  # Extract and filter out empty lines
     
     # Consecutive contributions validation
     consecutive_error = validate_consecutive_contributions_new(existing_contributions_data, poet_id, poem.id)
     if consecutive_error:
         return consecutive_error
     
-    # Step 4: Validate max lines
-    max_lines_validation, status_code = validate_max_lines(poem_type, existing_contributions)
-    if status_code != 200:
-        return max_lines_validation, status_code
+    # Step 4: Validate max lines only if the poem type is not Free Verse
+    if poem_type.name != 'Free Verse':
+        max_lines_validation, status_code = validate_max_lines(poem_type, existing_contributions)
+        if status_code != 200:
+            return max_lines_validation, status_code
     
     current_poem_content = poem_details_data.content
 
+    print(f"Type of poem_details_data: {type(poem_details_data)}")  # for debugging
     print(f"Delegating to handler for poem type: {poem_type.name}")
 
     # Delegate control to specific poem type handlers (Haiku, Free Verse, etc.)

@@ -368,7 +368,7 @@ def submit_individual_poem():
         return jsonify({'status': 'error', 'message': f'An error occurred: {str(e)}'}), 500
 
 
-@routes.route('/submit-collab-contribution', methods=['POST'])
+@routes.route('/submit-collab-poem', methods=['POST'])
 @jwt_required()
 def submit_collaborative_contribution():
     """
