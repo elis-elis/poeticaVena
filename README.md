@@ -1,6 +1,6 @@
 # poeticaVena
 
-    poeticaVena is an online platform where users (poets) can explore, create, and collaborate on poetry within specific forms, such as Haiku and Free Verse. The platform combines modern web technologies and AI to offer real-time feedback, an interactive writing experience, and collaborative features. poeticaVena aims to engage poets in both creative writing and learning about various poetic forms, offering a space for practice and exploration.
+**poeticaVena** is an online platform/website where users (poets) can explore, create, and collaborate on poetry within specific forms, such as Haiku and Free Verse. The platform combines modern web technologies and AI to offer real-time feedback, an interactive writing experience, and collaborative features. poeticaVena aims to engage poets in both creative writing and learning about various poetic forms, offering a space for practice and exploration.
 
 ## Key Features
 
