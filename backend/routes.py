@@ -30,7 +30,7 @@ def home():
     return jsonify(message=f'You are (almost) welcomed here, dear poet(esse) with ID {poet}. 🍸'), 200
 
 
-@routes.route('/get-poets', methods=['GET'])
+@routes.route('/poets', methods=['GET'])
 @jwt_required()
 def get_poets():
     """
@@ -68,7 +68,7 @@ def get_poets():
         return jsonify({'error': f'An error occurred: {str(e)}'}), 500
 
 
-@routes.route('/get-poem2', methods=['GET'])
+@routes.route('/poem2', methods=['GET'])
 @jwt_required()
 def get_poem2():
     poem = get_poem_by_id(55)  # Assume this returns a SQLAlchemy model instance
@@ -79,7 +79,7 @@ def get_poem2():
     return jsonify(poem_response.model_dump())
 
 
-@routes.route('/get-poem/<int:poem_id>', methods=['GET'])
+@routes.route('/poem/<int:poem_id>', methods=['GET'])
 @jwt_required()
 def get_poem(poem_id):
     """
@@ -103,7 +103,7 @@ def get_poem(poem_id):
         return jsonify({'error': f'An error occurred: {str(e)}'}), 500
 
 
-@routes.route('/get-poems2', methods=['GET'])
+@routes.route('/poems2', methods=['GET'])
 @jwt_required()
 def get_poems2():
     is_collaborative = request.args.get('is_collaborative')
@@ -151,7 +151,7 @@ def get_poems2():
         return jsonify({'error': f'An error occurred: {str(e)}'}), 500
 
 
-@routes.route('/get-poems', methods=['GET'])
+@routes.route('/poems', methods=['GET'])
 @jwt_required()
 def get_poems():
     """

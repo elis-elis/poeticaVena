@@ -121,7 +121,6 @@ def process_collaborative_poem(poem, poem_details_data, poet_id):
     
     current_poem_content = poem_details_data.content
 
-    print(f"Type of poem_details_data: {type(poem_details_data)}")  # for debugging
     print(f"Delegating to handler for poem type: {poem_type.name}")
 
     # Delegate control to specific poem type handlers (Haiku, Free Verse, etc.)
