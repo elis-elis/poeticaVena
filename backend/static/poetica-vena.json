@@ -1,45 +1,26 @@
 {
 	"swagger": "2.0",
     "info": {
-    "title": "Poetica Vena API",
-    "version": "1.0.0"
+        "title": "Poetica Vena API",
+        "version": "1.0.0"
     },
     "servers": [{ "url": "http://localhost:5000" }],
     "schemes": ["http"],
     "securityDefinitions": {
         "BearerAuth": {
-        "type": "apiKey",
-        "name": "Authorization",
-        "in": "header",
-        "description": "Enter your bearer token in the format **Bearer <token>**"
+            "type": "apiKey",
+            "name": "Authorization",
+            "in": "header",
+            "description": "🍭 Enter your bearer token in the format **Bearer <token>**"
         }
     },
     "paths": {
-		"/poets": {
-            "get": {
-                "summary": "Returns all poets",
-                "produces": [
-                    "application/json"
-                ],
-                "security": [
-                    {
-                        "BearerAuth": []
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "Successful operation"
-                    }
-                }
-            }
-        },
         "/auth/login": {
             "post": {
+                "tags": ["Authentication"],
                 "summary": "Logs in the poet(esse)",
                 "consumes": ["application/json"],
-                "produces": [
-                    "application/json"
-                ],
+                "produces": ["application/json"],
                 "parameters": [
                     {
                         "name": "poet data",
@@ -53,25 +34,158 @@
                 ],
                 "responses": {
                     "200": {
-                        "description": "Successful operation"
+                        "description": "Successful operation",
+                        "schema": {
+                            "type": "object",
+                            "properties": {
+                                "access_token": {
+                                    "type": "string",
+                                    "example": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+                                },
+                                "token_type": {
+                                    "type": "string",
+                                    "example": "bearer"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized. Invalid email or password."
+                    }
+                }
+            }
+        },
+        "/auth/register": {
+            "post": {
+                "tags": ["Authentication"],
+                "summary": "Registers a new poet(esse)",
+                "consumes": ["application/json"],
+                "produces": ["application/json"],
+                "parameters": [
+                    {
+                        "name": "poet data",
+                        "in": "body",
+                        "description": "JSON poet data for the api",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/PoetRegister"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Poet(esse) registered successfully",
+                        "schema": {
+                            "$ref": "#/definitions/PoetResponse"
+                        }
+                    },
+                    "409": {
+                        "description": "Conflict. Email already exists."
+                    },
+                    "400": {
+                        "description": "Bad request. Validation failed."
+                    },
+                    "500": {
+                        "description": "Internal server error."
+                    }
+                }
+            }
+        },
+
+
+        "/poets": {
+            "get": {
+                "tags": ["Poets"],
+                "summary": "Returns all poets",
+                "produces": ["application/json"],
+                "security": [
+                {
+                    "BearerAuth": []
+                }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Successful operation",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "type": "object",
+                                "properties": {
+                                    "id": {
+                                        "type": "integer",
+                                        "example": 1
+                                    },
+                                    "name": {
+                                        "type": "string",
+                                        "example": "Elis Something"
+                                    },
+                                    "email": {
+                                        "type": "string",
+                                        "example": "alis@gmail.com"
+                                    },
+                                    "created_at": {
+                                        "type": "string",
+                                        "example": "Tue, 08 Oct 2024 08:19:59 GMT"
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized. Invalid or missing Bearer token."
                     }
                 }
             }
         }
     },
     "definitions": {
-    "PoetLogIn": {
-      "type": "object",
-      "properties": {
-        "email": {
-          "type": "string",
-		  "example": "elis@gmail.com"
-        },
-        "password": {
-          "type": "string",
-		  "example": "1234567890"
+        "PoetLogIn": {
+        "type": "object",
+        "properties": {
+            "email": {
+            "type": "string",
+            "example": "elis@gmail.com"
+            },
+            "password": {
+            "type": "string",
+            "example": "1234567890"
+            }
         }
-      }
+        },
+        "PoetRegister": {
+        "type": "object",
+        "properties": {
+            "poet_name": {
+                "type": "string",
+                "example": "Elis Something"
+            },
+            "email": {
+                "type": "string",
+                "example": "elis@gmail.com"
+            },
+            "password_hash": {
+                "type": "string",
+                "example": "1234567890"
+            }
+        },
+        "required": ["poet_name", "email", "password_hash"]
+        },
+        "PoetResponse": {
+            "type": "object",
+                "properties": {
+                "id": {
+                    "type": "integer",
+                    "example": 1
+                },
+                "poet_name": {
+                    "type": "string",
+                    "example": "Elis Something"
+                },
+                "email": {
+                    "type": "string",
+                    "example": "elis@gmail.com"
+                }
+            }
+        }
     }
-  }
 }
