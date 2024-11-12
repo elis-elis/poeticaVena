@@ -1,0 +1,77 @@
+{
+	"swagger": "2.0",
+    "info": {
+    "title": "Poetica Vena API",
+    "version": "1.0.0"
+    },
+    "servers": [{ "url": "http://localhost:5000" }],
+    "schemes": ["http"],
+    "securityDefinitions": {
+        "BearerAuth": {
+        "type": "apiKey",
+        "name": "Authorization",
+        "in": "header",
+        "description": "Enter your bearer token in the format **Bearer <token>**"
+        }
+    },
+    "paths": {
+		"/poets": {
+            "get": {
+                "summary": "Returns all poets",
+                "produces": [
+                    "application/json"
+                ],
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Successful operation"
+                    }
+                }
+            }
+        },
+        "/auth/login": {
+            "post": {
+                "summary": "Logs in the poet(esse)",
+                "consumes": ["application/json"],
+                "produces": [
+                    "application/json"
+                ],
+                "parameters": [
+                    {
+                        "name": "poet data",
+                        "in": "body",
+                        "description": "JSON poet data for the api",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/PoetLogIn"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Successful operation"
+                    }
+                }
+            }
+        }
+    },
+    "definitions": {
+    "PoetLogIn": {
+      "type": "object",
+      "properties": {
+        "email": {
+          "type": "string",
+		  "example": "elis@gmail.com"
+        },
+        "password": {
+          "type": "string",
+		  "example": "1234567890"
+        }
+      }
+    }
+  }
+}

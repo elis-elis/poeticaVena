@@ -20,6 +20,7 @@ from .database import db, create_database
 from .data_utils import initialize_poem_types
 from backend.data_utils import initialize_poem_types
 from flask_cors import CORS
+from flask_swagger_ui import get_swaggerui_blueprint
 # from flask_migrate import Migrate
 
 
@@ -27,6 +28,19 @@ def create_app():
     app = Flask(__name__)
 
     CORS(app, origins=["http://localhost:3000"])  # Next.js frontend
+
+    # Swagger-UI config
+    SWAGGER_URL = "/api/docs"
+    API_URL = "/static/poetica-vena.json"
+
+    swagger_ui_blueprint = get_swaggerui_blueprint(
+        SWAGGER_URL,
+        API_URL,
+        config={
+            'app_name': 'Poetica Vena API'
+        }
+    )
+    app.register_blueprint(swagger_ui_blueprint, url_prefix=SWAGGER_URL)
 
     # Set the HTTP request/response log level to WARNING or ERROR
     logging.getLogger("httpcore").setLevel(logging.WARNING)
