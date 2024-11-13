@@ -50,7 +50,7 @@
                         }
                     },
                     "401": {
-                        "description": "Unauthorized. Invalid email or password."
+                        "description": "🦈 Unauthorized. Invalid email or password."
                     }
                 }
             }
@@ -74,19 +74,19 @@
                 ],
                 "responses": {
                     "201": {
-                        "description": "Poet(esse) registered successfully",
+                        "description": "Poet(esse) registered successfully 🌻",
                         "schema": {
                             "$ref": "#/definitions/PoetResponse"
                         }
                     },
                     "409": {
-                        "description": "Conflict. Email already exists."
+                        "description": "Conflict. Email already exists. ☔️"
                     },
                     "400": {
-                        "description": "Bad request. Validation failed."
+                        "description": "Bad request. Validation failed. ⚡️"
                     },
                     "500": {
-                        "description": "Internal server error."
+                        "description": "Internal server error. 🦫"
                     }
                 }
             }
@@ -105,34 +105,37 @@
                 ],
                 "responses": {
                     "200": {
-                        "description": "Successful operation",
+                        "description": "Ahh once again a successful operation 🍄",
                         "schema": {
-                            "type": "array",
-                            "items": {
-                                "type": "object",
-                                "properties": {
-                                    "id": {
-                                        "type": "integer",
-                                        "example": 1
-                                    },
-                                    "name": {
-                                        "type": "string",
-                                        "example": "Elis Something"
-                                    },
-                                    "email": {
-                                        "type": "string",
-                                        "example": "alis@gmail.com"
-                                    },
-                                    "created_at": {
-                                        "type": "string",
-                                        "example": "Tue, 08 Oct 2024 08:19:59 GMT"
+                            "type": "object",
+                            "properties": {
+                                "page": {
+                                    "type": "integer",
+                                    "example": 1
+                                },
+                                "per_page": {
+                                    "type": "integer",
+                                    "example": 8
+                                },
+                                "poets": {
+                                    "type": "array",
+                                    "items": {
+                                        "$ref": "#/definitions/PoetResponse"
                                     }
+                                },
+                                "total": {
+                                    "type": "integer",
+                                    "example": 10
+                                },
+                                "total_pages": {
+                                    "type": "integer",
+                                    "example": 2
                                 }
                             }
                         }
                     },
                     "401": {
-                        "description": "Unauthorized. Invalid or missing Bearer token."
+                        "description": "🌽 Unauthorized. Invalid or missing Bearer token."
                     }
                 }
             }
@@ -140,35 +143,35 @@
     },
     "definitions": {
         "PoetLogIn": {
-        "type": "object",
-        "properties": {
-            "email": {
-            "type": "string",
-            "example": "elis@gmail.com"
-            },
-            "password": {
-            "type": "string",
-            "example": "1234567890"
-            }
-        }
-        },
-        "PoetRegister": {
-        "type": "object",
-        "properties": {
-            "poet_name": {
-                "type": "string",
-                "example": "Elis Something"
-            },
-            "email": {
+            "type": "object",
+            "properties": {
+                "email": {
                 "type": "string",
                 "example": "elis@gmail.com"
-            },
-            "password_hash": {
+                },
+                "password": {
                 "type": "string",
                 "example": "1234567890"
+                }
             }
         },
-        "required": ["poet_name", "email", "password_hash"]
+        "PoetRegister": {
+            "type": "object",
+            "properties": {
+                "poet_name": {
+                    "type": "string",
+                    "example": "Elis Something"
+                },
+                "email": {
+                    "type": "string",
+                    "example": "elis@gmail.com"
+                },
+                "password_hash": {
+                    "type": "string",
+                    "example": "1234567890"
+                }
+            },
+            "required": ["poet_name", "email", "password_hash"]
         },
         "PoetResponse": {
             "type": "object",
@@ -184,6 +187,10 @@
                 "email": {
                     "type": "string",
                     "example": "elis@gmail.com"
+                },
+                "created_at": {
+                    "type": "string",
+                    "example": "Tue, 08 Oct 2024 08:19:59 GMT"
                 }
             }
         }

@@ -1,7 +1,13 @@
 from flask import Blueprint, request, jsonify, make_response
 from .database import db
 from werkzeug.security import generate_password_hash, check_password_hash
-from flask_jwt_extended import create_access_token, create_refresh_token, jwt_required, get_jwt_identity, unset_jwt_cookies
+from flask_jwt_extended import (
+    create_access_token, 
+    create_refresh_token, 
+    jwt_required, 
+    get_jwt_identity, 
+    unset_jwt_cookies
+)
 from .models import Poet
 from .schemas import PoetCreate, PoetResponse
 from datetime import timedelta
@@ -48,16 +54,6 @@ def login():
     else:
         print(f'Failed login attempt for {email}')  # Debug statement
         return jsonify({"error": "Invalid email or password. 🪭 "}), 401
-
-
-@auth.route('/poet/me', methods=['GET'])
-@jwt_required()
-def fetch_poet():
-    current_user = get_jwt_identity()
-    poet = Poet.query.filter_by(id=current_user['poet_id']).first()
-    poet_response = PoetResponse.model_validate(poet)
-
-    return jsonify(poet_response.model_dump()), 201
 
 
 @auth.route('/refresh', methods=['POST'])

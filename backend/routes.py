@@ -3,10 +3,21 @@ from flask import Blueprint, jsonify, request
 from flask_jwt_extended import jwt_required, get_jwt_identity
 from pydantic import ValidationError
 from sqlalchemy.exc import IntegrityError
-from .models import Poem, PoemType
+from .models import Poem, PoemType, Poet
 from .database import db
-from .schemas import PoemCreate, PoemTypeResponse, PoemResponse, PoemDetailsCreate, PoemUpdate, PoetResponse
-from .submit_poem_details import process_individual_poem, process_collaborative_poem, is_authorized_poet
+from .schemas import (
+    PoemCreate, 
+    PoemTypeResponse, 
+    PoemResponse, 
+    PoemDetailsCreate, 
+    PoemUpdate, 
+    PoetResponse
+)
+from .submit_poem_details import (
+    process_individual_poem, 
+    process_collaborative_poem, 
+    is_authorized_poet
+)
 from .poem_utils import get_poem_by_id
 from .poet_utils import get_all_poets_query, get_current_poet
 import logging
@@ -28,6 +39,19 @@ def home():
     """
     poet = get_current_poet()
     return jsonify(message=f'You are (almost) welcomed here, dear poet(esse) with ID {poet}. 🍸'), 200
+
+
+@routes.route('/poet', methods=['GET'])
+@jwt_required()
+def get_poet():
+    """
+    Retrieves one poet(esse) registered on the website.
+    """
+    current_user = get_jwt_identity()
+    poet = Poet.query.filter_by(id=current_user['poet_id']).first()
+    poet_response = PoetResponse.model_validate(poet)
+
+    return jsonify(poet_response.model_dump()), 201
 
 
 @routes.route('/poets', methods=['GET'])
