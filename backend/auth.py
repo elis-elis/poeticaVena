@@ -36,10 +36,10 @@ def login():
         access_token = create_access_token(identity={'poet_id': poet.id})
         print(f"DEBUG: Generated token identity -> poet_id: {poet.id}")
         
-        refresh_token = create_refresh_token(identity=poet.id)
+        refresh_token = create_refresh_token(identity={'poet_id': poet.id})
 
         # Create a response with the access token in the body
-        response = make_response(jsonify(access_token=access_token, token_type="bearer"), 200)
+        response = make_response(jsonify(access_token=access_token, refresh_token=refresh_token, token_type="bearer"), 200)
 
         # Set the refresh token in an HTTP-only cookie
         response.set_cookie(

@@ -38,7 +38,7 @@ def home():
     Currently returns a placeholder message for authenticated users.
     """
     poet = get_current_poet()
-    return jsonify(message=f'You are (almost) welcomed here, dear poet(esse) with ID {poet}. 🍸'), 200
+    return jsonify(message=f'You are (almost) welcomed here, dear poet(esse) {poet.poet_name} with ID {poet.id}. 🍸'), 200
 
 
 @routes.route('/poet/me', methods=['GET'])
@@ -139,17 +139,6 @@ def get_poets():
     except Exception as e:
         logging.error(f"Error fetching poets: {str(e)}")
         return jsonify({'error': f'An error occurred: {str(e)}'}), 500
-
-
-@routes.route('/poem', methods=['GET'])
-@jwt_required()
-def get_poem():
-    poem = get_poem_by_id(67)  # Assume this returns a SQLAlchemy model instance
-    poem_dict = poem.to_dict()  # Convert the SQLAlchemy model to a dictionary
-
-    # Use Pydantic's .model_validate() to create a PoemResponse instance
-    poem_response = PoemResponse.model_validate(poem_dict)
-    return jsonify(poem_response.model_dump())
 
 
 @routes.route('/poem/<int:poem_id>', methods=['GET'])

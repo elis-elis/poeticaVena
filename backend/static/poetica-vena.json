@@ -125,7 +125,36 @@
                         }
                     },
                     "401": {
-                        "description": "Unauthorized. Invalid or expired refresh token."
+                        "description": "🌤 Unauthorized. Invalid or expired refresh token."
+                    }
+                }
+            }
+        },
+        "/": {
+            "get": {
+                "tags": ["Home"],
+                "summary": "Entry point for authenticated users",
+                "description": "Returns a welcoming message for authenticated poets.",
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Welcoming message",
+                        "schema": {
+                            "type": "object",
+                            "properties": {
+                                "message": {
+                                    "type": "string",
+                                    "example": "You are (almost) welcomed here, dear poet(esse) with ID 1. 🍸"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized. Invalid or missing Bearer token. 🥜"
                     }
                 }
             }
@@ -148,10 +177,10 @@
                         }
                     },
                     "400": {
-                        "description": "Unauthorized. Invalid or missing Bearer token."
+                        "description": "Unauthorized. Invalid or missing Bearer token. 🎱"
                     },
                     "404": {
-                        "description": "Poet not found."
+                        "description": "Poet not found. 🛼"
                     }
                 }
             }
@@ -184,13 +213,13 @@
                         }
                     },
                     "401": {
-                        "description": "Unauthorized. Invalid or missing Bearer token."
+                        "description": "Unauthorized. Invalid or missing Bearer token. 🍌"
                     },
                     "404": {
-                        "description": "Poet not found."
+                        "description": "Poet not found. 🥐"
                     },
                     "500": {
-                        "description": "Internal server error."
+                        "description": "Internal server error. 🍜"
                     }
                 }
             }
