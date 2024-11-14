@@ -15,46 +15,6 @@
         }
     },
     "paths": {
-        "/auth/login": {
-            "post": {
-                "tags": ["Authentication"],
-                "summary": "Logs in the poet(esse)",
-                "consumes": ["application/json"],
-                "produces": ["application/json"],
-                "parameters": [
-                    {
-                        "name": "poet data",
-                        "in": "body",
-                        "description": "JSON poet data for the api",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/PoetLogIn"
-                        }
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "Successful operation",
-                        "schema": {
-                            "type": "object",
-                            "properties": {
-                                "access_token": {
-                                    "type": "string",
-                                    "example": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
-                                },
-                                "token_type": {
-                                    "type": "string",
-                                    "example": "bearer"
-                                }
-                            }
-                        }
-                    },
-                    "401": {
-                        "description": "🦈 Unauthorized. Invalid email or password."
-                    }
-                }
-            }
-        },
         "/auth/register": {
             "post": {
                 "tags": ["Authentication"],
@@ -91,17 +51,159 @@
                 }
             }
         },
-
-
+        "/auth/login": {
+            "post": {
+                "tags": ["Authentication"],
+                "summary": "Logs in the poet(esse)",
+                "consumes": ["application/json"],
+                "produces": ["application/json"],
+                "parameters": [
+                    {
+                        "name": "poet data",
+                        "in": "body",
+                        "description": "JSON poet data for the api",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/PoetLogIn"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Very much successful operation 🍷",
+                        "schema": {
+                            "type": "object",
+                            "properties": {
+                                "access_token": {
+                                    "type": "string",
+                                    "example": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+                                },
+                                "token_type": {
+                                    "type": "string",
+                                    "example": "bearer"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "🦈 Unauthorized. Invalid email or password."
+                    }
+                }
+            }
+        },
+        "/auth/logout": {
+            "post": {
+                "tags": ["Authentication"],
+                "summary": "Logs out the poet(esse)",
+                "responses": {
+                    "200": {
+                        "description": "Logged out successfully. 🧁 See you later."
+                    }
+                }
+            }
+        },
+        "/auth/refresh": {
+            "post": {
+                "tags": ["Authentication"],
+                "summary": "Refreshes the access token",
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "New access token generated",
+                        "schema": {
+                            "type": "object",
+                            "properties": {
+                                "access_token": {
+                                    "type": "string",
+                                    "example": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized. Invalid or expired refresh token."
+                    }
+                }
+            }
+        },
+        "/poet/me": {
+            "get": {
+                "tags": ["Poets"],
+                "summary": "Get profile of the logged-in poet",
+                "produces": ["application/json"],
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Profile of the logged-in poet",
+                        "schema": {
+                            "$ref": "#/definitions/PoetResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Unauthorized. Invalid or missing Bearer token."
+                    },
+                    "404": {
+                        "description": "Poet not found."
+                    }
+                }
+            }
+        },
+        "/poet/{poet_id}": {
+            "get": {
+                "tags": ["Poets"],
+                "summary": "Get poet by ID",
+                "description": "Retrieves information of a specific poet(esse) by poet_id.",
+                "parameters": [
+                    {
+                        "name": "poet_id",
+                        "in": "path",
+                        "required": true,
+                        "type": "integer",
+                        "description": "ID of the poet to retrieve",
+                        "example": 1
+                    }
+                ],
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Details of the requested poet",
+                        "schema": {
+                            "$ref": "#/definitions/PoetResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized. Invalid or missing Bearer token."
+                    },
+                    "404": {
+                        "description": "Poet not found."
+                    },
+                    "500": {
+                        "description": "Internal server error."
+                    }
+                }
+            }
+        },
         "/poets": {
             "get": {
                 "tags": ["Poets"],
                 "summary": "Returns all poets",
                 "produces": ["application/json"],
                 "security": [
-                {
-                    "BearerAuth": []
-                }
+                    {
+                        "BearerAuth": []
+                    }
                 ],
                 "responses": {
                     "200": {
