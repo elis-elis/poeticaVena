@@ -32,7 +32,10 @@ def login():
     # Find poet by email
     poet = Poet.query.filter_by(email=email).first()
     if poet and check_password_hash(poet.password_hash, password):
-        access_token = create_access_token(identity={'poet_id': poet.id}, expires_delta=timedelta(hours=1))
+        # access_token = create_access_token(identity={'poet_id': poet.id}, expires_delta=timedelta(hours=1))
+        access_token = create_access_token(identity={'poet_id': poet.id})
+        print(f"DEBUG: Generated token identity -> poet_id: {poet.id}")
+        
         refresh_token = create_refresh_token(identity=poet.id)
 
         # Create a response with the access token in the body
@@ -48,12 +51,10 @@ def login():
         )
 
         print(f'Poet(esse) {poet.poet_name} logged in successfully! 🚀')  # Debug statement
-
         return response
 
-    else:
-        print(f'Failed login attempt for {email}')  # Debug statement
-        return jsonify({"error": "Invalid email or password. 🪭 "}), 401
+    print(f'Failed login attempt for {email}')  # Debug statement
+    return jsonify({"error": "Invalid email or password. 🪭 "}), 401
 
 
 @auth.route('/refresh', methods=['POST'])

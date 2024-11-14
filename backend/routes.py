@@ -19,7 +19,7 @@ from .submit_poem_details import (
     is_authorized_poet
 )
 from .poem_utils import get_poem_by_id
-from .poet_utils import get_all_poets_query, get_current_poet
+from .poet_utils import fetch_poet, get_all_poets_query, get_current_poet
 import logging
 from flask_jwt_extended.exceptions import JWTDecodeError
 
@@ -41,17 +41,66 @@ def home():
     return jsonify(message=f'You are (almost) welcomed here, dear poet(esse) with ID {poet}. 🍸'), 200
 
 
-@routes.route('/poet', methods=['GET'])
+@routes.route('/poet/me', methods=['GET'])
 @jwt_required()
 def get_poet():
     """
-    Retrieves one poet(esse) registered on the website.
+    Retrieves the profile of the logged-in poet(esse).
     """
-    current_user = get_jwt_identity()
-    poet = Poet.query.filter_by(id=current_user['poet_id']).first()
-    poet_response = PoetResponse.model_validate(poet)
+    current_poet = get_current_poet()
+    print(f"DEBUG: Retrieved JWT Identity in /poet route -> {current_poet}")
+    
+    if not current_poet:
+            return jsonify({'error': 'Poet not found'}), 404
+    
+    poet_response = PoetResponse.model_validate(current_poet)
+    return jsonify(poet_response.model_dump(exclude={"password_hash"})), 200
 
-    return jsonify(poet_response.model_dump()), 201
+
+@routes.route('/poet/<int:poet_id>', methods=['GET'])
+@jwt_required()
+def get_poet_by_id(poet_id):
+    """
+    Retrieves information of any specific poet(esse) by poet_id.
+    """
+    try:
+        # Fetch the requested poet by ID
+        poet = fetch_poet(poet_id)
+        
+        if not poet:
+            return jsonify({'error': 'Poet not found'}), 404
+
+        # Validate and return the poet data
+        poet_response = PoetResponse.model_validate(poet)
+        return jsonify(poet_response.model_dump(exclude={"password_hash"})), 200
+    
+    except Exception as e:
+        print(f"ERROR: {str(e)}")
+        return jsonify({'error': str(e)}), 500
+    
+
+@routes.route('/poet/<identifier>', methods=['GET'])
+@jwt_required()
+def get_poet_by_identifier(identifier):
+    """
+    Retrieves information of a specific poet by poet_id or poet_name.
+    """
+    try:
+        # Try to fetch by ID first
+        poet = Poet.query.filter(
+            (Poet.id == identifier) | (Poet.poet_name.ilike(f"%{identifier}%"))
+        ).first()
+
+        if not poet:
+            return jsonify({'error': 'Poet not found'}), 404
+
+        # Validate and return the poet data
+        poet_response = PoetResponse.model_validate(poet)
+        return jsonify(poet_response.model_dump(exclude={"password_hash"})), 200
+
+    except Exception as e:
+        print(f"ERROR: {str(e)}")
+        return jsonify({'error': str(e)}), 500
 
 
 @routes.route('/poets', methods=['GET'])
@@ -92,10 +141,10 @@ def get_poets():
         return jsonify({'error': f'An error occurred: {str(e)}'}), 500
 
 
-@routes.route('/poem2', methods=['GET'])
+@routes.route('/poem', methods=['GET'])
 @jwt_required()
-def get_poem2():
-    poem = get_poem_by_id(55)  # Assume this returns a SQLAlchemy model instance
+def get_poem():
+    poem = get_poem_by_id(67)  # Assume this returns a SQLAlchemy model instance
     poem_dict = poem.to_dict()  # Convert the SQLAlchemy model to a dictionary
 
     # Use Pydantic's .model_validate() to create a PoemResponse instance
@@ -105,7 +154,7 @@ def get_poem2():
 
 @routes.route('/poem/<int:poem_id>', methods=['GET'])
 @jwt_required()
-def get_poem(poem_id):
+def get_poem_by_id(poem_id):
     """
     Retrieves a specific poem's details and all its contributions.
     """
@@ -127,9 +176,9 @@ def get_poem(poem_id):
         return jsonify({'error': f'An error occurred: {str(e)}'}), 500
 
 
-@routes.route('/poems2', methods=['GET'])
+@routes.route('/all-poems', methods=['GET'])
 @jwt_required()
-def get_poems2():
+def get_poems_with_five_filters():
     is_collaborative = request.args.get('is_collaborative')
     page = request.args.get('page', type=int, default=1)
     per_page = request.args.get('per_page', type=int, default=5)
@@ -177,7 +226,7 @@ def get_poems2():
 
 @routes.route('/poems', methods=['GET'])
 @jwt_required()
-def get_poems():
+def get_poems_with_two_filters():
     """
     This route retrieves poems with filters for collaborative status and publication status, with pagination.
     If is_collaborative=true, we show only collaborative poems that are not yet published.
