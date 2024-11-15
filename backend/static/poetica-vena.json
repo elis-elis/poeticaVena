@@ -18,7 +18,7 @@
         "/auth/register": {
             "post": {
                 "tags": ["Authentication"],
-                "summary": "Registers a new poet(esse)",
+                "summary": "Registers a new poet(esse). 🦕",
                 "consumes": ["application/json"],
                 "produces": ["application/json"],
                 "parameters": [
@@ -54,7 +54,7 @@
         "/auth/login": {
             "post": {
                 "tags": ["Authentication"],
-                "summary": "Logs in the poet(esse)",
+                "summary": "Logs in the poet(esse). 🦩",
                 "consumes": ["application/json"],
                 "produces": ["application/json"],
                 "parameters": [
@@ -94,7 +94,7 @@
         "/auth/logout": {
             "post": {
                 "tags": ["Authentication"],
-                "summary": "Logs out the poet(esse)",
+                "summary": "Logs out the poet(esse). 🐿",
                 "responses": {
                     "200": {
                         "description": "Logged out successfully. 🧁 See you later."
@@ -105,7 +105,7 @@
         "/auth/refresh": {
             "post": {
                 "tags": ["Authentication"],
-                "summary": "Refreshes the access token",
+                "summary": "Refreshes the access token. 🐉",
                 "security": [
                     {
                         "BearerAuth": []
@@ -133,7 +133,7 @@
         "/": {
             "get": {
                 "tags": ["Home"],
-                "summary": "Entry point for authenticated users",
+                "summary": "Entry point for authenticated poets. 🌗",
                 "description": "Returns a welcoming message for authenticated poets.",
                 "security": [
                     {
@@ -162,7 +162,7 @@
         "/poet/me": {
             "get": {
                 "tags": ["Poets"],
-                "summary": "Get profile of the logged-in poet(esse)",
+                "summary": "Get profile of the logged-in poet(esse). 🍀",
                 "produces": ["application/json"],
                 "security": [
                     {
@@ -188,7 +188,7 @@
         "/poet/{identifier}": {
             "get": {
                 "tags": ["Poets"],
-                "summary": "Get by ID or name",
+                "summary": "Get by ID or name. 🌻",
                 "description": "Retrieves information of a specific poet(esse) using an identifier, which can be either a poet_id (integer) or a poet_name (string).",
                 "parameters": [
                     {
@@ -227,7 +227,7 @@
         "/poets": {
             "get": {
                 "tags": ["Poets"],
-                "summary": "Returns all poets",
+                "summary": "Returns all poets. 🪴",
                 "produces": ["application/json"],
                 "security": [
                     {
@@ -274,7 +274,7 @@
         "/poem/{poem_id}": {
             "get": {
                 "tags": ["Poems"],
-                "summary": "Get poem by ID",
+                "summary": "Get poem by ID. 🎰",
                 "description": "Retrieves details of a specific poem along with its contributions using the poem ID.",
                 "parameters": [
                     {
@@ -313,8 +313,8 @@
         "/all-poems": {
             "get": {
                 "tags": ["Poems"],
-                "summary": "Retrieve and filter all poems",
-                "description": "Fetches a list of poems with optional filters such as collaboration status, type, poet ID, and title.",
+                "summary": "Get all poems with optional filters. 🏇",
+                "description": "Retrieve a list of poems with optional filtering based on collaborative status, poem type, poet, title, and pagination.",
                 "parameters": [
                     {
                         "name": "is_collaborative",
@@ -369,28 +369,33 @@
                 ],
                 "responses": {
                     "200": {
-                        "description": "A list of filtered poems with pagination metadata",
+                        "description": "A paginated list of poems based on the applied filters.",
                         "schema": {
                             "type": "object",
                             "properties": {
                                 "total": {
                                     "type": "integer",
-                                    "example": 50
+                                    "example": 150,
+                                    "description": "Total number of poems found based on the applied filters."
                                 },
                                 "page": {
                                     "type": "integer",
-                                    "example": 1
+                                    "example": 1,
+                                    "description": "Current page number."
                                 },
                                 "per_page": {
                                     "type": "integer",
-                                    "example": 5
+                                    "example": 10,
+                                    "description": "Number of poems per page."
                                 },
                                 "total_pages": {
                                     "type": "integer",
-                                    "example": 10
+                                    "example": 15,
+                                    "description": "Total number of pages available."
                                 },
                                 "poems": {
                                     "type": "array",
+                                    "description": "List of poems matching the filter criteria.",
                                     "items": {
                                         "$ref": "#/definitions/PoemResponse"
                                     }
@@ -399,10 +404,32 @@
                         }
                     },
                     "401": {
-                        "description": "Unauthorized. Invalid or missing Bearer token. 🍌"
+                        "description": "Unauthorized. Invalid or missing Bearer token. 🦇"
                     },
                     "500": {
-                        "description": "Internal server error. 🪰"
+                        "description": "Internal server error. An unexpected error occurred. 🥞"
+                    }
+                }
+            }
+        },
+        "/poem-types": {
+            "get": {
+                "tags": ["Poem Types"],
+                "summary": "Get all poem types",
+                "description": "Fetch all available poem types and return them as a list of JSON objects.",
+                "parameters": [],
+                "responses": {
+                    "200": {
+                        "description": "List of all poem types.",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/PoemTypeResponse"
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "🐩 Internal server error. An unexpected error occurred."
                     }
                 }
             }
@@ -542,7 +569,27 @@
                     }
                 }
             }
-        }
+        },
+        "PoemTypeResponse": {
+            "type": "object",
+            "properties": {
+                "id": {
+                    "type": "integer",
+                    "example": 1,
+                    "description": "The unique identifier for the poem type."
+                },
+                "name": {
+                    "type": "string",
+                    "example": "Haiku",
+                    "description": "The name of the poem type."
+                },
+                "description": {
+                    "type": "string",
+                    "example": "A traditional form of Japanese poetry with a 5-7-5 syllable structure.",
+                    "description": "A brief description of the poem type."
+                }
+            }
+        } 
     }
 }
 
