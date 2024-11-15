@@ -1,5 +1,5 @@
 from datetime import datetime, timezone
-from flask import Blueprint, jsonify, request
+from flask import Blueprint, json, jsonify, request
 from flask_jwt_extended import jwt_required, get_jwt_identity
 from pydantic import ValidationError
 from sqlalchemy.exc import IntegrityError
@@ -279,13 +279,21 @@ def get_poem_types():
     Fetch all available poem types and return them as JSON.
     """
     poem_types = PoemType.query.all()   # The result is a list of PoemType objects
-
-    # Validate each PoemType object using the PoemTypeResponse schema
-    # poem_types_response = [PoemTypeResponse.model_validate(poem_type) for poem_type in poem_types]
     poem_types_response = []
+
     for poem_type in poem_types:
+        # Convert JSON string to a Python dictionary if needed
+        if isinstance(poem_type.criteria, str):
+            try:
+                poem_type.criteria = json.loads(poem_type.criteria)
+            except json.JSONDecodeError as e:
+                logging.error(f"Error decoding criteria JSON for PoemType ID {poem_type.id}: {str(e)}")
+                poem_type.criteria = {}
+        
+        # Validate using the PoemTypeResponse schema        
         poem_type_response = PoemTypeResponse.model_validate(poem_type)
-        poem_types_response.append(poem_type_response)
+        # Convert Pydantic model to dictionary
+        poem_types_response.append(poem_type_response.model_dump())
 
     # Return the list of poem types as JSON
     return jsonify(poem_types_response), 200

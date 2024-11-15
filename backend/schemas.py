@@ -1,6 +1,6 @@
 from pydantic import BaseModel, EmailStr, Field
 from datetime import datetime
-from typing import List, Optional
+from typing import List, Optional, Dict, Any
 
 
 # Models for Poem Type
@@ -8,7 +8,7 @@ from typing import List, Optional
 class PoemTypeCreate(BaseModel):
     name: str = Field(..., max_length=50)
     description: str
-    criteria: str
+    criteria: Dict[str, Any] 
 
 
 class PoemTypeResponse(PoemTypeCreate):

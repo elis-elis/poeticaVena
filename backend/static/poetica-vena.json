@@ -414,8 +414,8 @@
         },
         "/poem-types": {
             "get": {
-                "tags": ["Poem Types"],
-                "summary": "Get all poem types",
+                "tags": ["Poems"],
+                "summary": "Get all poem types. 🤸‍♂️",
                 "description": "Fetch all available poem types and return them as a list of JSON objects.",
                 "parameters": [],
                 "responses": {
@@ -585,11 +585,34 @@
                 },
                 "description": {
                     "type": "string",
-                    "example": "A traditional form of Japanese poetry with a 5-7-5 syllable structure.",
+                    "example": "A Japanese unrhymed poem format consisting of 17 syllables arranged in three lines.",
                     "description": "A brief description of the poem type."
+                },
+                "criteria": {
+                    "type": "object",
+                    "description": "Specific rules or criteria for this poem type.",
+                    "properties": {
+                        "max_lines": {
+                            "type": "integer",
+                            "example": 3,
+                            "nullable": true,
+                            "description": "The maximum number of lines allowed in the poem type. Null if not specified."
+                        },
+                        "rhyme_scheme": {
+                            "type": "string",
+                            "example": "AABBA",
+                            "nullable": true,
+                            "description": "The rhyme scheme of the poem type. Null if not specified."
+                        },
+                        "syllable_structure": {
+                            "type": "string",
+                            "example": "5-7-5",
+                            "nullable": true,
+                            "description": "The syllable structure of the poem type. Null if not specified."
+                        }
+                    }
                 }
             }
-        } 
+        }
     }
 }
-
