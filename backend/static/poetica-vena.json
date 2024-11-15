@@ -1,7 +1,7 @@
 {
 	"swagger": "2.0",
     "info": {
-        "title": "Poetica Vena API",
+        "title": "poeticaVENA API",
         "version": "1.0.0"
     },
     "servers": [{ "url": "http://localhost:5000" }],
@@ -113,7 +113,7 @@
                 ],
                 "responses": {
                     "200": {
-                        "description": "New access token generated",
+                        "description": "New access token generated 🌈",
                         "schema": {
                             "type": "object",
                             "properties": {
@@ -162,7 +162,7 @@
         "/poet/me": {
             "get": {
                 "tags": ["Poets"],
-                "summary": "Get profile of the logged-in poet",
+                "summary": "Get profile of the logged-in poet(esse)",
                 "produces": ["application/json"],
                 "security": [
                     {
@@ -171,7 +171,7 @@
                 ],
                 "responses": {
                     "200": {
-                        "description": "Profile of the logged-in poet",
+                        "description": "Profile of the logged-in poet(esse)",
                         "schema": {
                             "$ref": "#/definitions/PoetResponse"
                         }
@@ -185,19 +185,19 @@
                 }
             }
         },
-        "/poet/{poet_id}": {
+        "/poet/{identifier}": {
             "get": {
                 "tags": ["Poets"],
-                "summary": "Get poet by ID",
-                "description": "Retrieves information of a specific poet(esse) by poet_id.",
+                "summary": "Get by ID or name",
+                "description": "Retrieves information of a specific poet(esse) using an identifier, which can be either a poet_id (integer) or a poet_name (string).",
                 "parameters": [
                     {
-                        "name": "poet_id",
+                        "name": "identifier",
                         "in": "path",
                         "required": true,
-                        "type": "integer",
-                        "description": "ID of the poet to retrieve",
-                        "example": 1
+                        "type": "string",
+                        "description": "Identifier of the poet, can be either a poet_id (e.g., '11') or poet_name (e.g., 'elis').",
+                        "example": "11"
                     }
                 ],
                 "security": [
@@ -207,7 +207,7 @@
                 ],
                 "responses": {
                     "200": {
-                        "description": "Details of the requested poet",
+                        "description": "Details of the requested poet(esse)",
                         "schema": {
                             "$ref": "#/definitions/PoetResponse"
                         }
@@ -216,7 +216,7 @@
                         "description": "Unauthorized. Invalid or missing Bearer token. 🍌"
                     },
                     "404": {
-                        "description": "Poet not found. 🥐"
+                        "description": "Poet(esse) not found, but keep looking. 🥐"
                     },
                     "500": {
                         "description": "Internal server error. 🍜"

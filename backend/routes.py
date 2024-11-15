@@ -86,10 +86,13 @@ def get_poet_by_identifier(identifier):
     Retrieves information of a specific poet by poet_id or poet_name.
     """
     try:
-        # Try to fetch by ID first
-        poet = Poet.query.filter(
-            (Poet.id == identifier) | (Poet.poet_name.ilike(f"%{identifier}%"))
-        ).first()
+        # Check if identifier is an integer
+        if identifier.isdigit():
+            # Fetch by ID
+            poet = Poet.query.filter(Poet.id == int(identifier)).first()
+        else:
+            # Fetch by name (case-insensitive)
+            poet = Poet.query.filter(Poet.poet_name.ilike(f"%{identifier}%")).first()
 
         if not poet:
             return jsonify({'error': 'Poet not found'}), 404
