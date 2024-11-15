@@ -180,19 +180,25 @@ def get_poems_with_five_filters():
 
     try:
         query = db.session.query(Poem)
+
         # Apply filtering based on collaborative status
         if is_collaborative is not None and is_collaborative.lower() == 'true':
             # Show only active collaborative poems (not published yet)
             query = query.filter(Poem.is_collaborative == True, Poem.is_published == False)
+        elif is_collaborative is not None and is_collaborative.lower() == 'false':
+            # Explicitly filter for non-collaborative poems
+            query = query.filter(Poem.is_collaborative == False)
+        else:
+            # Default: Show only published poems
+            query = query.filter(Poem.is_published == True)
+
+        # Apply additional filters
         if poem_type_id:
             query = query.filter(Poem.poem_type_id == poem_type_id)
         if poet_id:
             query = query.filter(Poem.poet_id == poet_id)
         if title:
             query = query.filter(Poem.title.ilike(f"%{title}%"))
-        else:
-            # Show only published poems
-            query = query.filter(Poem.is_published == True)
 
         # Paginate the results
         poems_paginated = query.paginate(page=page, per_page=per_page, error_out=False)
