@@ -270,6 +270,45 @@
                     }
                 }
             }
+        },
+        "/poem/{poem_id}": {
+            "get": {
+                "tags": ["Poems"],
+                "summary": "Get poem by ID",
+                "description": "Retrieves details of a specific poem along with its contributions using the poem ID.",
+                "parameters": [
+                    {
+                        "name": "poem_id",
+                        "in": "path",
+                        "required": true,
+                        "type": "integer",
+                        "description": "ID of the poem to retrieve",
+                        "example": 5
+                    }
+                ],
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Details of the requested poem",
+                        "schema": {
+                            "$ref": "#/definitions/PoemResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized. Invalid or missing Bearer token. 🍌"
+                    },
+                    "404": {
+                        "description": "Poem not found 🌛"
+                    },
+                    "500": {
+                        "description": "Internal server error. 🪰"
+                    }
+                }
+            }
         }
     },
     "definitions": {
@@ -324,6 +363,89 @@
                     "example": "Tue, 08 Oct 2024 08:19:59 GMT"
                 }
             }
+        },
+        "PoemResponse": {
+            "type": "object",
+            "properties": {
+                "id": {
+                    "type": "integer",
+                    "example": 67
+                },
+                "title": {
+                    "type": "string",
+                    "example": "oh, please, not again"
+                },
+                "poet_id": {
+                    "type": "integer",
+                    "example": 7,
+                    "description": "The ID of the poet who initiated the poem"
+                },
+                "poem_type_id": {
+                    "type": "integer",
+                    "example": 5,
+                    "description": "The type/category ID of the poem"
+                },
+                "is_collaborative": {
+                    "type": "boolean",
+                    "example": true,
+                    "description": "Indicates if the poem is a collaborative effort"
+                },
+                "is_published": {
+                    "type": "boolean",
+                    "example": true,
+                    "description": "Indicates if the poem has been published"
+                },
+                "created_at": {
+                    "type": "string",
+                    "example": "Sat, 09 Nov 2024 11:22:00 GMT",
+                    "description": "The creation timestamp of the poem"
+                },
+                "updated_at": {
+                    "type": "string",
+                    "example": "Sat, 09 Nov 2024 12:25:39 GMT",
+                    "description": "The last updated timestamp of the poem"
+                },
+                "details": {
+                    "type": "array",
+                    "description": "List of contributions to the poem",
+                    "items": {
+                        "type": "object",
+                        "properties": {
+                            "id": {
+                                "type": "integer",
+                                "example": 146,
+                                "description": "The ID of the poem contribution"
+                            },
+                            "poem_id": {
+                                "type": "integer",
+                                "example": 67,
+                                "description": "The ID of the parent poem"
+                            },
+                            "poet_id": {
+                                "type": "integer",
+                                "example": 7,
+                                "description": "The ID of the contributing poet"
+                            },
+                            "content": {
+                                "type": "string",
+                                "example": "just waiting for the call",
+                                "description": "The text content of the contribution"
+                            },
+                            "publish": {
+                                "type": "boolean",
+                                "example": false,
+                                "description": "Indicates if this contribution is published"
+                            },
+                            "submitted_at": {
+                                "type": "string",
+                                "example": "Sat, 09 Nov 2024 12:07:57 GMT",
+                                "description": "The timestamp when this contribution was submitted"
+                            }
+                        }
+                    }
+                }
+            }
         }
     }
 }
+

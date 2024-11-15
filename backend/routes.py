@@ -18,7 +18,7 @@ from .submit_poem_details import (
     process_collaborative_poem, 
     is_authorized_poet
 )
-from .poem_utils import get_poem_by_id
+from .poem_utils import get_full_poem_by_id, get_poem_by_id
 from .poet_utils import fetch_poet, get_all_poets_query, get_current_poet
 import logging
 from flask_jwt_extended.exceptions import JWTDecodeError
@@ -146,7 +146,7 @@ def get_poets():
 
 @routes.route('/poem/<int:poem_id>', methods=['GET'])
 @jwt_required()
-def get_poem_by_id(poem_id):
+def fetch_poem_by_id(poem_id):
     """
     Retrieves a specific poem's details and all its contributions.
     """
