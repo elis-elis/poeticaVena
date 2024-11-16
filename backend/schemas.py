@@ -73,10 +73,10 @@ class PoemUpdate(BaseModel):
 
 class PoemResponse(PoemCreate):
     id: int
-    is_published: Optional[bool] = False
     created_at: datetime
-    updated_at: Optional[datetime] = None
     details: Optional[List[PoemDetailsResponse]] = []
+    is_published: Optional[bool] = False
+    updated_at: Optional[datetime] = None
 
     class Config:
         from_attributes = True

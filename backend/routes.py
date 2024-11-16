@@ -299,11 +299,26 @@ def get_poem_types():
     return jsonify(poem_types_response), 200
 
 
-@routes.route('/submit-poem2', methods=['POST'])
+@routes.route('/create-poem', methods=['POST'])
 @jwt_required()
-def submit_poem2():
+def create_poem():
+    """
+    This route handles the creation of a new poem by a logged-in poet, before any lines are added.
+    It performs several checks and validations, including:
+        - Ensuring the poet is authenticated using JWT.
+        - Validating the incoming request data with the `PoemCreate` Pydantic model.
+        - Checking for duplicate poem titles by the same poet.
+        - Creating a new poem entry in the database and associating it with the logged-in poet.
+        - Returning the created poem's details as a JSON response.
+
+    Returns:
+        - `201 Created`: If the poem is successfully submitted.
+        - `400 Bad Request`: If there is a validation error, duplicate title, or other client-side issue.
+        - `401 Unauthorized`: If the JWT token is invalid or missing.
+        - `404 Not Found`: If the logged-in poet is not found.
+        - `500 Internal Server Error`: For any other server-side error during the poem submission process.
+    """
     try:
-        # Find the poet by their email (whoch is stored in the token)
         poet = get_current_poet()
         if not poet:
             return jsonify({'error': 'Poet(esse) not found. 🦞'}), 404
@@ -336,7 +351,7 @@ def submit_poem2():
         # Use PoemResponse Pydantic model to return the poem data
         poem_response = PoemResponse.model_validate(new_poem)
 
-        return jsonify(poem_response.model_dump()), 201
+        return jsonify(poem_response.model_dump(exclude={"details"})), 201
 
     except JWTDecodeError:
         return jsonify({'error': 'Invalid token. Please log in again. ☔️'}), 401
@@ -368,7 +383,6 @@ def submit_poem():
         - Returns a JSON response with the poem details or error message.
     """
     try:
-        # Find the poet by their email (whoch is stored in the token)
         poet = get_current_poet()
         if not poet:
             return jsonify({'error': 'Poet(esse) not found. 🦞'}), 404

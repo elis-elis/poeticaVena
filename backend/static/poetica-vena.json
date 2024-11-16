@@ -412,9 +412,194 @@
                 }
             }
         },
+        "/create-poem": {
+            "post": {
+                "tags": ["Poems"],
+                "summary": "Create a new poem. 🪗",
+                "description": "This endpoint allows a logged-in poet to create a new poem entry before adding any lines. The poem will be associated with the logged-in poet and initially set as unpublished.",
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "consumes": ["application/json"],
+                "produces": ["application/json"],
+                "parameters": [
+                    {
+                        "in": "body",
+                        "name": "body",
+                        "description": "Poem creation payload",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/PoemCreateRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Poem successfully created",
+                        "schema": {
+                            "$ref": "#/definitions/PoemResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request. Validation error or duplicate title.",
+                        "schema": {
+                            "type": "object",
+                            "properties": {
+                                "error": {
+                                    "type": "string",
+                                    "example": "Ah! 🍒 You already have a poem with this title. Please choose a different one."
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized. Invalid or missing Bearer token.",
+                        "schema": {
+                            "type": "object",
+                            "properties": {
+                                "error": {
+                                    "type": "string",
+                                    "example": "Invalid token. Please log in again. ☔️"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Poet not found.",
+                        "schema": {
+                            "type": "object",
+                            "properties": {
+                                "error": {
+                                    "type": "string",
+                                    "example": "Poet(esse) not found. 🦞"
+                                }
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Internal server error.",
+                        "schema": {
+                            "type": "object",
+                            "properties": {
+                                "error": {
+                                    "type": "string",
+                                    "example": "An error occurred: <error message>"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/submit-individual-poem": {
+            "post": {
+                "tags": ["Poems"],
+                "summary": "Submit an individual poem. 🎤",
+                "description": "This endpoint allows a logged-in poet to submit a complete individual poem. The poem is created with its full content as a single entry.",
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "consumes": ["application/json"],
+                "produces": ["application/json"],
+                "parameters": [
+                    {
+                        "in": "body",
+                        "name": "body",
+                        "description": "Payload for submitting an individual poem",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/PoemDetailsCreate"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Individual poem successfully submitted",
+                        "schema": {
+                            "$ref": "#/definitions/PoemDetailsResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request. Validation error or invalid data provided.",
+                        "schema": {
+                            "type": "object",
+                            "properties": {
+                                "status": {
+                                    "type": "string",
+                                    "example": "error"
+                                },
+                                "message": {
+                                    "type": "string",
+                                    "example": "Validation failed"
+                                },
+                                "errors": {
+                                    "type": "array",
+                                    "items": {
+                                        "type": "object",
+                                        "properties": {
+                                            "loc": {
+                                                "type": "array",
+                                                "items": {
+                                                    "type": "string",
+                                                    "example": "content"
+                                                }
+                                            },
+                                            "msg": {
+                                                "type": "string",
+                                                "example": "Field required"
+                                            },
+                                            "type": {
+                                                "type": "string",
+                                                "example": "value_error"
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            },
+            "401": {
+                "description": "Unauthorized. Invalid or missing Bearer token.",
+                "schema": {
+                    "type": "object",
+                    "properties": {
+                        "status": {
+                            "type": "string",
+                            "example": "error"
+                        },
+                        "message": {
+                            "type": "string",
+                            "example": "Invalid token. Please log in again. ☔️"
+                        }
+                    }
+                }
+            },
+            "500": {
+                "description": "Internal server error.",
+                "schema": {
+                    "type": "object",
+                    "properties": {
+                        "status": {
+                            "type": "string",
+                            "example": "error"
+                        },
+                        "message": {
+                            "type": "string",
+                            "example": "An error occurred: <error message>"
+                        }
+                    }
+                }
+            }
+        },
         "/poem-types": {
             "get": {
-                "tags": ["Poems"],
+                "tags": ["Poem Utils"],
                 "summary": "Get all poem types. 🤸‍♂️",
                 "description": "Fetch all available poem types and return them as a list of JSON objects.",
                 "parameters": [],
@@ -488,6 +673,32 @@
                 }
             }
         },
+        "PoemCreateRequest": {
+            "type": "object",
+            "properties": {
+                "title": {
+                    "type": "string",
+                    "example": "squeeze lemons into my eyes",
+                    "description": "The title of the poem. Must be unique for the logged-in poet."
+                },
+                "poem_type_id": {
+                    "type": "integer",
+                    "example": 1,
+                    "description": "The ID of the poem type (e.g., Haiku, Free Verse)."
+                },
+                "poet_id": {
+                    "type": "integer",
+                    "example": 12,
+                    "description": "The ID of the poet who initiated the poem."
+                },
+                "is_collaborative": {
+                    "type": "boolean",
+                    "example": false,
+                    "description": "Indicates whether the poem is a collaborative work."
+                }
+            },
+            "required": ["title", "poem_type_id", "is_collaborative"]
+        },
         "PoemResponse": {
             "type": "object",
             "properties": {
@@ -501,13 +712,11 @@
                 },
                 "poet_id": {
                     "type": "integer",
-                    "example": 7,
-                    "description": "The ID of the poet who initiated the poem"
+                    "example": 7
                 },
                 "poem_type_id": {
                     "type": "integer",
-                    "example": 5,
-                    "description": "The type/category ID of the poem"
+                    "example": 5
                 },
                 "is_collaborative": {
                     "type": "boolean",
@@ -516,7 +725,7 @@
                 },
                 "is_published": {
                     "type": "boolean",
-                    "example": true,
+                    "example": false,
                     "description": "Indicates if the poem has been published"
                 },
                 "created_at": {
@@ -528,45 +737,58 @@
                     "type": "string",
                     "example": "Sat, 09 Nov 2024 12:25:39 GMT",
                     "description": "The last updated timestamp of the poem"
+                }
+            }
+        },
+        "PoemDetailsCreate": {
+            "type": "object",
+            "properties": {
+                "poem_id": {
+                    "type": "integer",
+                    "example": 80
                 },
-                "details": {
-                    "type": "array",
-                    "description": "List of contributions to the poem",
-                    "items": {
-                        "type": "object",
-                        "properties": {
-                            "id": {
-                                "type": "integer",
-                                "example": 146,
-                                "description": "The ID of the poem contribution"
-                            },
-                            "poem_id": {
-                                "type": "integer",
-                                "example": 67,
-                                "description": "The ID of the parent poem"
-                            },
-                            "poet_id": {
-                                "type": "integer",
-                                "example": 7,
-                                "description": "The ID of the contributing poet"
-                            },
-                            "content": {
-                                "type": "string",
-                                "example": "just waiting for the call",
-                                "description": "The text content of the contribution"
-                            },
-                            "publish": {
-                                "type": "boolean",
-                                "example": false,
-                                "description": "Indicates if this contribution is published"
-                            },
-                            "submitted_at": {
-                                "type": "string",
-                                "example": "Sat, 09 Nov 2024 12:07:57 GMT",
-                                "description": "The timestamp when this contribution was submitted"
-                            }
-                        }
-                    }
+                "poet_id": {
+                    "type": "integer",
+                    "example": 7
+                },
+                "content": {
+                    "type": "string",
+                    "example": "no matter what we do, we fall and run and crawl and sit, and lay down and spin about, and then we get lost"
+                },
+                "publish": {
+                    "type": "boolean",
+                    "example": false
+                }
+            },
+            "required": ["poem_id", "poet_id", "content"]
+        },
+        "PoemDetailsResponse": {
+            "type": "object",
+            "properties": {
+                "id": {
+                    "type": "integer",
+                    "example": 146
+                },
+                "poem_id": {
+                    "type": "integer",
+                    "example": 67
+                },
+                "poet_id": {
+                    "type": "integer",
+                    "example": 8
+                },
+                "content": {
+                    "type": "string",
+                    "example": "just waiting for the call"
+                },
+                "publish": {
+                    "type": "boolean",
+                    "example": true
+                },
+                "submitted_at": {
+                    "type": "string",
+                    "format": "date-time",
+                    "example": "Sat, 09 Nov 2024 12:07:57 GMT"
                 }
             }
         },
