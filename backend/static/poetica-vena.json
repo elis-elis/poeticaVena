@@ -864,6 +864,88 @@
                 }
             }
         },
+        "/delete-poem/{poem_id}": {
+            "delete": {
+                "tags": ["Poems"],
+                "summary": "Delete a poem. 🍑",
+                "description": "Deletes one of poet(esses)'s own poems. Collaborative poems cannot be deleted by a single poet(esse).",
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "parameters": [
+                    {
+                        "name": "poem_id",
+                        "in": "path",
+                        "required": true,
+                        "description": "The ID of the poem to be deleted.",
+                        "schema": {
+                            "type": "integer",
+                            "example": 78
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Poem deleted successfully. 🍸",
+                        "schema": {
+                            "type": "object",
+                            "properties": {
+                                "status": {
+                                    "type": "string",
+                                    "example": "success"
+                                },
+                                "message": {
+                                    "type": "string",
+                                    "example": "Poem deleted successfully. More room for new (sexy) poems. 🍇"
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden. The poet does not have permission to delete this poem.",
+                        "schema": {
+                            "type": "object",
+                            "properties": {
+                                "error": {
+                                    "type": "string",
+                                    "example": "oh, but you do not have permission to delete this poem. 🍽"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found. The poem does not exist or the poet is not found.",
+                        "schema": {
+                            "type": "object",
+                            "properties": {
+                                "error": {
+                                    "type": "string",
+                                    "example": "Poem not found. Maybe try again?"
+                                }
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Internal server error.",
+                        "schema": {
+                            "type": "object",
+                            "properties": {
+                                "status": {
+                                    "type": "string",
+                                    "example": "error"
+                                },
+                                "message": {
+                                    "type": "string",
+                                    "example": "An error occurred: <error message>"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
         "/poem-types": {
             "get": {
                 "tags": ["Poems"],
