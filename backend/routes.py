@@ -18,7 +18,7 @@ from .submit_poem_details import (
     process_collaborative_poem, 
     is_authorized_poet
 )
-from .poem_utils import get_full_poem_by_id, get_poem_by_id
+from .poem_utils import get_full_poem_by_id, get_poem_by_id, get_poem_by_title
 from .poet_utils import fetch_poet, get_all_poets_query, get_current_poet
 import logging
 from flask_jwt_extended.exceptions import JWTDecodeError
@@ -106,7 +106,7 @@ def get_poet_by_identifier(identifier):
         return jsonify({'error': str(e)}), 500
 
 
-@routes.route('/poets', methods=['GET'])
+@routes.route('/all-poets', methods=['GET'])
 @jwt_required()
 def get_poets():
     """
@@ -144,7 +144,42 @@ def get_poets():
         return jsonify({'error': f'An error occurred: {str(e)}'}), 500
 
 
-@routes.route('/poem/<int:poem_id>', methods=['GET'])
+@routes.route('/poem/<identifier>', methods=['GET'])
+@jwt_required()
+def fetch_poem_by_identifier(identifier):
+    """
+    Retrieves a specific poem's details and all its contributions by either ID or title.
+
+    Parameters:
+        identifier (str): Can be a numeric ID of the poem or the title of the poem.
+
+    Returns:
+        JSON response containing poem details if found, or an error message if not found.
+    """
+    try:
+        # Determine if the identifier is a digit (ID) or a string (title)
+        if identifier.isdigit():
+            poem = get_poem_by_id(int(identifier))
+        else:
+            poem = get_poem_by_title(identifier)
+
+        # Check if the poem was found
+        if not poem:
+            logging.error(f'Poem with identifier "{identifier}" not found. 🪰')
+            return jsonify({'error': 'Poem not found. 🌛'}), 404
+
+        # Validate and serialize poem information using PoemResponse schema
+        poem_data = poem.to_dict()
+        poem_response = PoemResponse.model_validate(poem_data)
+
+        return jsonify(poem_response.model_dump()), 200
+
+    except Exception as e:
+        logging.error(f"Error fetching poem with identifier '{identifier}': {str(e)}")
+        return jsonify({'error': f'An error occurred: {str(e)}'}), 500
+
+
+@routes.route('/a-poem/<int:poem_id>', methods=['GET'])
 @jwt_required()
 def fetch_poem_by_id(poem_id):
     """

@@ -188,7 +188,7 @@
         "/poet/{identifier}": {
             "get": {
                 "tags": ["Poets"],
-                "summary": "Get by ID or name. 🌻",
+                "summary": "Get poet(esse) by ID or name. 🌻",
                 "description": "Retrieves information of a specific poet(esse) using an identifier, which can be either a poet_id (integer) or a poet_name (string).",
                 "parameters": [
                     {
@@ -224,7 +224,7 @@
                 }
             }
         },
-        "/poets": {
+        "/all-poets": {
             "get": {
                 "tags": ["Poets"],
                 "summary": "Returns all poets. 🪴",
@@ -271,41 +271,58 @@
                 }
             }
         },
-        "/poem/{poem_id}": {
+        "/poem/{identifier}": {
             "get": {
                 "tags": ["Poems"],
-                "summary": "Get poem by ID. 🫀",
-                "description": "Retrieves details of a specific poem along with its contributions using the poem ID.",
-                "parameters": [
-                    {
-                        "name": "poem_id",
-                        "in": "path",
-                        "required": true,
-                        "type": "integer",
-                        "description": "ID of the poem to retrieve",
-                        "example": 5
-                    }
-                ],
+                "summary": "Fetch a poem by identifier (ID or title). 🌟",
+                "description": "Retrieves a specific poem's details and all its contributions using either a numeric ID or the poem's title as the identifier.",
                 "security": [
                     {
                         "BearerAuth": []
                     }
                 ],
+                "parameters": [
+                    {
+                        "name": "identifier",
+                        "in": "path",
+                        "required": true,
+                        "description": "The identifier of the poem. It can be either the poem's numeric ID or its title.",
+                        "schema": {
+                            "type": "string",
+                            "example": "48 or 'What you see is not what you get'"
+                        }
+                    }
+                ],
                 "responses": {
                     "200": {
-                        "description": "Details of the requested poem",
+                        "description": "Volia! Poem details retrieved successfully.",
                         "schema": {
                             "$ref": "#/definitions/PoemResponse"
                         }
                     },
-                    "401": {
-                        "description": "Unauthorized. Invalid or missing Bearer token. 🍌"
-                    },
                     "404": {
-                        "description": "Poem not found 🌛"
+                        "description": "Poem not found.",
+                        "schema": {
+                            "type": "object",
+                            "properties": {
+                                "error": {
+                                    "type": "string",
+                                    "example": "Poem not found. 🌛"
+                                }
+                            }
+                        }
                     },
                     "500": {
-                        "description": "Internal server error. 🪰"
+                        "description": "Internal server error.",
+                        "schema": {
+                            "type": "object",
+                            "properties": {
+                                "error": {
+                                    "type": "string",
+                                    "example": "An error occurred: <error message>"
+                                }
+                            }
+                        }
                     }
                 }
             }

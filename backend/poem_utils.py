@@ -73,6 +73,16 @@ def get_full_poem_by_id(poem_id):
     return Poem.query.options(joinedload(Poem.poem_details)).filter_by(id=poem_id).first()
 
 
+def get_poem_by_title(title):
+    """
+    Fetch a poem by its title from the database.
+        
+    Returns:
+        Poem: The poem object if found, otherwise None.
+    """
+    return Poem.query.filter(Poem.title.ilike(title)).first()
+
+
 def get_poem_contributions(poem_id):
     """
     Retrieve all contributions (lines) for a specific poem.
