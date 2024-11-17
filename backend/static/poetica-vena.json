@@ -512,7 +512,7 @@
                         "description": "Payload for submitting an individual poem",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/PoemDetailsCreate"
+                            "$ref": "#/definitions/PoemDetailsRequest"
                         }
                     }
                 ],
@@ -592,6 +592,99 @@
                         "message": {
                             "type": "string",
                             "example": "An error occurred: <error message>"
+                        }
+                    }
+                }
+            }
+        },
+        "/submit-collab-poem": {
+            "post": {
+                "tags": ["Poems"],
+                "summary": "Submit a contribution to a collaborative poem. 🎨",
+                "description": "This endpoint allows a logged-in poet to contribute a line or section to a collaborative poem. It validates the input and checks authorization before allowing the contribution.",
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "consumes": ["application/json"],
+                "produces": ["application/json"],
+                "parameters": [
+                    {
+                        "in": "body",
+                        "name": "body",
+                        "description": "Payload for submitting a collaborative contribution",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/PoemDetailsRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Contribution successfully submitted to the collaborative poem",
+                        "schema": {
+                            "$ref": "#/definitions/PoemDetailsResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request. Validation error or incorrect poem type.",
+                        "schema": {
+                            "type": "object",
+                            "properties": {
+                                "error": {
+                                    "type": "string",
+                                    "example": "This is not a collaborative poem. 🐋"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized. Invalid or missing Bearer token.",
+                        "schema": {
+                            "type": "object",
+                            "properties": {
+                                "error": {
+                                    "type": "string",
+                                    "example": "Invalid token data. Please log in again. 🍄"
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden. The poet is not authorized to contribute to this poem.",
+                        "schema": {
+                            "type": "object",
+                            "properties": {
+                                "error": {
+                                    "type": "string",
+                                    "example": "Unfortunately (or fortunately) you are not authorized to submit content for this poem. 🍳"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found. The poem does not exist.",
+                        "schema": {
+                            "type": "object",
+                            "properties": {
+                                "error": {
+                                    "type": "string",
+                                    "example": "Poem not found. ✨"
+                                }
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Internal server error.",
+                        "schema": {
+                            "type": "object",
+                            "properties": {
+                                "error": {
+                                    "type": "string",
+                                    "example": "An error occurred: <error message>"
+                                }
+                            }
                         }
                     }
                 }
@@ -720,8 +813,7 @@
                 },
                 "is_collaborative": {
                     "type": "boolean",
-                    "example": true,
-                    "description": "Indicates if the poem is a collaborative effort"
+                    "example": true
                 },
                 "is_published": {
                     "type": "boolean",
@@ -730,8 +822,7 @@
                 },
                 "created_at": {
                     "type": "string",
-                    "example": "Sat, 09 Nov 2024 11:22:00 GMT",
-                    "description": "The creation timestamp of the poem"
+                    "example": "Sat, 09 Nov 2024 11:22:00 GMT"
                 },
                 "updated_at": {
                     "type": "string",
@@ -740,7 +831,7 @@
                 }
             }
         },
-        "PoemDetailsCreate": {
+        "PoemDetailsRequest": {
             "type": "object",
             "properties": {
                 "poem_id": {
