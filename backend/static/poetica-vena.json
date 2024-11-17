@@ -274,7 +274,7 @@
         "/poem/{poem_id}": {
             "get": {
                 "tags": ["Poems"],
-                "summary": "Get poem by ID. 🎰",
+                "summary": "Get poem by ID. 🫀",
                 "description": "Retrieves details of a specific poem along with its contributions using the poem ID.",
                 "parameters": [
                     {
@@ -313,7 +313,7 @@
         "/all-poems": {
             "get": {
                 "tags": ["Poems"],
-                "summary": "Get all poems with optional filters. 🏇",
+                "summary": "Get all poems with optional filters. 👄",
                 "description": "Retrieve a list of poems with optional filtering based on collaborative status, poem type, poet, title, and pagination.",
                 "parameters": [
                     {
@@ -415,7 +415,7 @@
         "/create-poem": {
             "post": {
                 "tags": ["Poems"],
-                "summary": "Create a new poem. 🪗",
+                "summary": "Create a new poem. 👁",
                 "description": "This endpoint allows a logged-in poet to create a new poem entry before adding any lines. The poem will be associated with the logged-in poet and initially set as unpublished.",
                 "security": [
                     {
@@ -496,7 +496,7 @@
         "/submit-individual-poem": {
             "post": {
                 "tags": ["Poems"],
-                "summary": "Submit an individual poem. 🎤",
+                "summary": "Submit an individual poem. 👑",
                 "description": "This endpoint allows a logged-in poet to submit a complete individual poem. The poem is created with its full content as a single entry.",
                 "security": [
                     {
@@ -600,7 +600,7 @@
         "/submit-collab-poem": {
             "post": {
                 "tags": ["Poems"],
-                "summary": "Submit a contribution to a collaborative poem. 🎨",
+                "summary": "Submit a contribution to a collaborative poem. 🪭",
                 "description": "This endpoint allows a logged-in poet to contribute a line or section to a collaborative poem. It validates the input and checks authorization before allowing the contribution.",
                 "security": [
                     {
@@ -690,10 +690,184 @@
                 }
             }
         },
+        "/edit-poem/{poem_id}": {
+            "get": {
+                "tags": ["Poems"],
+                "summary": "Fetch the poem details for editing. 🫳",
+                "description": "Fetches the existing metadata and content of a poem for editing purposes. Only the poem owner or authorized contributor (for collaborative poems) can access this.",
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "parameters": [
+                    {
+                        "name": "poem_id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "example": 70
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Volia! 🐝 Successfully fetched poem details for editing.",
+                        "schema": {
+                            "$ref": "#/definitions/PoemResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden. 🦓 The user does not have permission to edit this poem.",
+                        "schema": {
+                            "type": "object",
+                            "properties": {
+                                "error": {
+                                    "type": "string",
+                                    "example": "This is not your poem, therefore you do not have permission to edit this poem. 🍫"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found. 🌵 The poem does not exist. But keep looking.",
+                        "schema": {
+                            "type": "object",
+                            "properties": {
+                                "error": {
+                                    "type": "string",
+                                    "example": "Poem not found. 🪷"
+                                }
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "💥 Internal server error.",
+                        "schema": {
+                            "type": "object",
+                            "properties": {
+                                "error": {
+                                    "type": "string",
+                                    "example": "🌧 An error occurred: <error message>"
+                                }
+                            }
+                        }
+                    }
+                }
+            },
+            "patch": {
+                "tags": ["Poems"],
+                "summary": "Edit and save the poem details. 🩸",
+                "description": "Update the poem's metadata and content. The poet(esse) must be the owner of the poem or an authorized contributor (for collaborative poems).",
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "consumes": ["application/json"],
+                "produces": ["application/json"],
+                "parameters": [
+                    {
+                        "name": "poem_id",
+                        "in": "path",
+                        "required": true,
+                        "description": "The ID of the poem to be edited.",
+                        "schema": {
+                            "type": "integer",
+                            "example": 69
+                        }
+                    },
+                    {
+                        "in": "body",
+                        "name": "body",
+                        "description": "Payload for updating the poem metadata and content.",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/PoemUpdate"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Beautiful! Successfully updated the poem. 🍁",
+                        "schema": {
+                            "$ref": "#/definitions/PoemResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request. Validation error.",
+                        "schema": {
+                            "type": "object",
+                            "properties": {
+                                "errors": {
+                                    "type": "array",
+                                    "items": {
+                                        "type": "object",
+                                        "properties": {
+                                            "loc": {
+                                                "type": "array",
+                                                "items": {
+                                                    "type": "string"
+                                                }
+                                            },
+                                            "msg": {
+                                                "type": "string",
+                                                "example": "value is not a valid integer"
+                                            },
+                                            "type": {
+                                                "type": "string",
+                                                "example": "type_error.integer"
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "description": "🌴 Forbidden. The poet does not have permission to edit this poem.",
+                        "schema": {
+                            "type": "object",
+                            "properties": {
+                                "error": {
+                                    "type": "string",
+                                    "example": "This is not your poem, therefore you do not have permission to edit this poem. 🍫"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found. 🌏 The poem does not exist, or does it?",
+                        "schema": {
+                            "type": "object",
+                            "properties": {
+                                "error": {
+                                    "type": "string",
+                                    "example": "Poem not found."
+                                }
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Internal server error. 🌹",
+                        "schema": {
+                            "type": "object",
+                            "properties": {
+                                "error": {
+                                    "type": "string",
+                                    "example": "An error occurred: <error message>"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
         "/poem-types": {
             "get": {
-                "tags": ["Poem Utils"],
-                "summary": "Get all poem types. 🤸‍♂️",
+                "tags": ["Poems"],
+                "summary": "Get all poem types. 🧠",
                 "description": "Fetch all available poem types and return them as a list of JSON objects.",
                 "parameters": [],
                 "responses": {
@@ -924,6 +1098,38 @@
                             "description": "The syllable structure of the poem type. Null if not specified."
                         }
                     }
+                }
+            }
+        },
+        "PoemUpdate": {
+            "type": "object",
+            "properties": {
+                "title": {
+                    "type": "string",
+                    "example": "so what..."
+                },
+                "poem_type_id": {
+                    "type": "integer",
+                    "example": 5
+                },
+                "details": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/PoemDetailsUpdate"
+                    }
+                }
+            }
+        },
+        "PoemDetailsUpdate": {
+            "type": "object",
+            "properties": {
+                "id": {
+                    "type": "integer",
+                    "example": 101
+                },
+                "content": {
+                    "type": "string",
+                    "example": "nothing to see here."
                 }
             }
         }
