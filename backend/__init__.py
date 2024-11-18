@@ -21,7 +21,7 @@ from .data_utils import initialize_poem_types
 from backend.data_utils import initialize_poem_types
 from flask_cors import CORS
 from flask_swagger_ui import get_swaggerui_blueprint
-# from flask_migrate import Migrate
+from flask_migrate import Migrate
 
 
 def create_app():
@@ -55,7 +55,7 @@ def create_app():
 
     db.init_app(app)
 
-    # migrate = Migrate(app, db)  # Bind Migrate to app and db
+    migrate = Migrate(app, db)  # Bind Migrate to app and db
 
     from .auth import auth
     from .routes import routes

@@ -3,7 +3,7 @@ from flask import Blueprint, json, jsonify, request
 from flask_jwt_extended import jwt_required, get_jwt_identity
 from pydantic import ValidationError
 from sqlalchemy.exc import IntegrityError
-from .models import Poem, PoemType, Poet
+from .models import Poem, PoemDetails, PoemType, Poet
 from .database import db
 from .schemas import (
     PoemCreate, 
@@ -141,6 +141,42 @@ def get_poets():
 
     except Exception as e:
         logging.error(f"Error fetching poets: {str(e)}")
+        return jsonify({'error': f'An error occurred: {str(e)}'}), 500
+
+
+@routes.route('/delete-poet', methods=['DELETE'])
+@jwt_required()
+def delete_poet():
+    """
+    Deletes the poet's account, their individual poems, and anonymizes their contributions to collaborative poems.
+    """
+    try:
+        poet = get_current_poet()
+        if not poet:
+            return jsonify({'error': 'Poet not found. 🦞'}), 404
+
+        poet_id = poet.id
+
+        # Step 1: Delete all individual poems authored by this poet
+        individual_poems = Poem.query.filter_by(poet_id=poet_id, is_collaborative=False).all()
+        for poem in individual_poems:
+            db.session.delete(poem)
+
+        # Step 2: Anonymize the poet's contributions to collaborative poems
+        collaborative_contributions = PoemDetails.query.filter_by(poet_id=poet_id).all()
+        for contribution in collaborative_contributions:
+            contribution.poet_id = None  # Set to NULL to anonymize
+
+        # Step 3: Delete the poet's account
+        db.session.delete(poet)
+
+        db.session.commit()
+
+        return jsonify({'message': 'Poet and individual poems deleted successfully. Collaborative contributions anonymized.'}), 200
+
+    except Exception as e:
+        db.session.rollback()
+        logging.error(f"Error deleting poet: {str(e)}")
         return jsonify({'error': f'An error occurred: {str(e)}'}), 500
 
 
