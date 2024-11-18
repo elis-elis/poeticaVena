@@ -1,7 +1,6 @@
 from flask_jwt_extended import get_jwt_identity
-# from backend.database import db
 from backend.models import Poet, PoemDetails
-
+from .database import db
 
 
 def fetch_poet(poet_id):
@@ -50,3 +49,17 @@ def get_poet_contributions(poet_id):
     return PoemDetails.query.filet_by(poet_id=poet_id).all()
 
 
+def get_or_create_deleted_poet():
+    """
+    Helper function to get or create the anonymous poet.
+    """
+    deleted_poet = Poet.query.filter_by(email='deletedpoet@gmail.com').first()
+    if not deleted_poet:
+        deleted_poet = Poet(
+            poet_name='deletedPoet', 
+            email='deletedpoet@gmail.com', 
+            password_hash='deleted'
+        )
+        db.session.add(deleted_poet)
+        db.session.commit()
+    return deleted_poet.id  # Return the ID of the existing or newly created poet

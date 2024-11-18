@@ -18,8 +18,8 @@ from .submit_poem_details import (
     process_collaborative_poem, 
     is_authorized_poet
 )
-from .poem_utils import get_full_poem_by_id, get_poem_by_id, get_poem_by_title
-from .poet_utils import fetch_poet, get_all_poets_query, get_current_poet
+from .poem_utils import get_poem_by_id, get_poem_by_title
+from .poet_utils import fetch_poet, get_all_poets_query, get_current_poet, get_or_create_deleted_poet
 import logging
 from flask_jwt_extended.exceptions import JWTDecodeError
 
@@ -157,6 +157,8 @@ def delete_poet():
 
         poet_id = poet.id
 
+        deleted_poet_id = get_or_create_deleted_poet()
+
         # Step 1: Delete all individual poems authored by this poet
         individual_poems = Poem.query.filter_by(poet_id=poet_id, is_collaborative=False).all()
         for poem in individual_poems:
@@ -165,18 +167,25 @@ def delete_poet():
         # Step 2: Anonymize the poet's contributions to collaborative poems
         collaborative_contributions = PoemDetails.query.filter_by(poet_id=poet_id).all()
         for contribution in collaborative_contributions:
-            contribution.poet_id = None  # Set to NULL to anonymize
+            contribution.poet_id = deleted_poet_id  # Assign to anonymous poet
 
-        # Step 3: Delete the poet's account
+        # Step 3: Update collaborative poems' poet_id to anonymous poet
+        collaborative_poems = Poem.query.filter_by(poet_id=poet_id, is_collaborative=True).all()
+        for collaborative_poem in collaborative_poems:
+            collaborative_poem.poet_id = deleted_poet_id  # Assign to anonymous poet
+
+        # Step 4: Delete the poet's account
         db.session.delete(poet)
 
         db.session.commit()
 
-        return jsonify({'message': 'Poet and individual poems deleted successfully. Collaborative contributions anonymized.'}), 200
+        return jsonify({
+            'message': '🍦 Poet(esse) and individual poems deleted successfully. Collaborative contributions anonymized.'
+        }), 200
 
     except Exception as e:
         db.session.rollback()
-        logging.error(f"Error deleting poet: {str(e)}")
+        logging.error(f"Error deleting poet(esse): {str(e)}")
         return jsonify({'error': f'An error occurred: {str(e)}'}), 500
 
 
