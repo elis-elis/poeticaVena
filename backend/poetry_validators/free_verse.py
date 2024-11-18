@@ -58,13 +58,14 @@ def handle_free_verse_new(existing_contributions, current_poem_content, poem, po
     # Debugging print
     print(f"Combined lines: {combined_lines}, Line Number: {line_number}")
     
-    # Check if the poet wants to publish this Free Verse poem
+    # Retrieve the `publish` flag from the request data
     should_publish = poem_details_data.dict().get('publish', False)
-    # should_publish = getattr(poem_details_data, 'publish', False)
+
+    # Update the `publish` field in `poem_details_data` before saving
+    poem_details_data.publish = should_publish
     
     # Save the poem contribution details
     poem_details = save_poem_details(poem_details_data)
-    poem_details_response = PoemDetailsResponse.model_validate(poem_details)
 
     # Prepare the full poem with the latest contribution
     full_poem_so_far = prepare_poem(existing_contributions, current_poem_content, poem.id)
@@ -73,10 +74,19 @@ def handle_free_verse_new(existing_contributions, current_poem_content, poem, po
     if should_publish:
         poem.is_published = True
         db.session.commit()
+        
+    db.session.refresh(poem_details)
+
+    poem_details_response = PoemDetailsResponse.model_validate(poem_details)
+
+    poem_details_response_dict = poem_details_response.model_dump()
+
+    # Overwrite the `publish` flag with the request data value
+    poem_details_response_dict['publish'] = should_publish
 
     return jsonify({
         'message': 'Contribution accepted! 🌱',
-        'poem_details': poem_details_response.model_dump(),
+        'poem_details': poem_details_response_dict,
         'full_poem': full_poem_so_far,
         'is_published': poem.is_published,
         'next_step': 'Continue writing until you... die, or until you decide to publish. 🦖'

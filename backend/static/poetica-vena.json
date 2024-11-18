@@ -271,6 +271,68 @@
                 }
             }
         },
+        "/delete-poet": {
+            "delete": {
+                "tags": ["Poets"],
+                "summary": "Delete the poet's account. 🦞",
+                "description": "Allows the currently logged-in poet(esse) to delete their account, along with all individual poems. Contributions to collaborative poems will be anonymized instead of being deleted.",
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Poet(esse) and individual poems deleted successfully. Collaborative contributions anonymized.",
+                        "schema": {
+                            "type": "object",
+                            "properties": {
+                                "message": {
+                                    "type": "string",
+                                    "example": "🍦 Poet(esse) and individual poems deleted successfully. Collaborative contributions anonymized."
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Poet(esse) not found.",
+                        "schema": {
+                            "type": "object",
+                            "properties": {
+                                "error": {
+                                    "type": "string",
+                                    "example": "Poet(esse) not found. 🦞"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized. Invalid or missing Bearer token.",
+                        "schema": {
+                            "type": "object",
+                            "properties": {
+                                "error": {
+                                    "type": "string",
+                                    "example": "Invalid token. Please log in again. ☔️"
+                                }
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Internal server error.",
+                        "schema": {
+                            "type": "object",
+                            "properties": {
+                                "error": {
+                                    "type": "string",
+                                    "example": "An error occurred: <error message>"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
         "/poem/{identifier}": {
             "get": {
                 "tags": ["Poems"],
