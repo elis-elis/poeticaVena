@@ -15,8 +15,8 @@ def add_poem_type(name, description, criteria):
     
     try:
         # Convert criteria to a JSON string if it's not already one
-        if isinstance(criteria, dict):
-            criteria = json.dumps(criteria)
+        # if isinstance(criteria, dict):
+            # criteria = json.dumps(criteria)
 
         # Create a new PoemType instance
         new_poem_type = PoemType(
