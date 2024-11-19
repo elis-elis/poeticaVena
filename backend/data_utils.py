@@ -1,4 +1,6 @@
 import json
+
+from flask import jsonify
 from .database import db
 from sqlalchemy.exc import SQLAlchemyError  # SQLAlchemy exception base class
 from .schemas import PoemTypeResponse
@@ -29,7 +31,7 @@ def add_poem_type(name, description, criteria):
         print(f"Poem type '{name}' added. 🎯")
         # Return the new poem type using the PoemTypeResponse Pydantic model
         poem_type_response = PoemTypeResponse.model_validate(new_poem_type)
-        return poem_type_response
+        return poem_type_response.model_dump()
 
     except SQLAlchemyError as e:
         # Roll back the session in case of any error to avoid inconsistent database state
