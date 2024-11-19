@@ -27,9 +27,10 @@ from flask_migrate import Migrate
 def create_app():
     app = Flask(__name__)
 
-    CORS(app, origins=["http://localhost:3000"])  # Next.js frontend
+    # CORS(app, origins=["http://localhost:3000"])  # Next.js frontend
     # Allow CORS for the frontend domain
     # CORS(app, resources={r"/*": {"origins": ["http://localhost:3000", "https://your-frontend-domain.com"]}}, supports_credentials=True)
+    CORS(app, resources={r"/*": {"origins": "*"}})
 
     # Swagger-UI config
     SWAGGER_URL = "/api/docs"
