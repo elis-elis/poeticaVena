@@ -5,7 +5,7 @@
         "version": "1.0.0"
     },
     "servers": [{ "url": "https://poeticavena.onrender.com" }],
-    "schemes": ["http"],
+    "schemes": ["https"],
     "securityDefinitions": {
         "BearerAuth": {
             "type": "apiKey",
