@@ -30,7 +30,7 @@ def create_app():
     # CORS(app, origins=["http://localhost:3000"])  # Next.js frontend
     # Allow CORS for the frontend domain
     # CORS(app, resources={r"/*": {"origins": ["http://localhost:3000", "https://your-frontend-domain.com"]}}, supports_credentials=True)
-    CORS(app, resources={r"/*": {"origins": "*"}})
+    CORS(app, resources={r"/*": {"origins": "https://poeticavena.onrender.com"}})
 
     # Swagger-UI config
     SWAGGER_URL = "/api/docs"
