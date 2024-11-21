@@ -5,7 +5,6 @@ from flask_jwt_extended import (
     create_access_token, 
     create_refresh_token, 
     jwt_required, 
-    get_jwt_identity, 
     unset_jwt_cookies
 )
 from .models import Poet
@@ -129,9 +128,12 @@ def register():
         db.session.commit()
         db.session.refresh(new_poet)
         print('Poet(esse) registered and committed to the database. 🍰')  # Debug statement
+        
         # Use PoetResponse Pydantic model to structure the response
         poet_response = PoetResponse.model_validate(new_poet)
-        return jsonify(poet_response.model_dump()), 201
+
+        # Exclude `password_hash` dynamically in the response
+        return jsonify(poet_response.model_dump(exclude={"password_hash"})), 201
 
     except Exception as e:
         db.session.rollback()
