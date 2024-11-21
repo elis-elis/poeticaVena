@@ -34,7 +34,7 @@ def create_app():
 
     # Swagger-UI config
     SWAGGER_URL = "/api/docs"
-    API_URL = "/poetica-vena.json"
+    API_URL = "/backend/poetica-vena.json"
 
     swagger_ui_blueprint = get_swaggerui_blueprint(
         SWAGGER_URL,
