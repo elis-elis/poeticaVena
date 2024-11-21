@@ -24,16 +24,26 @@ def validate_poem_content(poem_type, current_poem_content, previous_lines):
     return None  # No validation needed for certain types
 
 
+import json
+
 def validate_max_lines(poem_type, existing_contributions):
     """
     Validate the maximum lines allowed for the poem type.
     If adding another line would surpass the poem’s line limit, it stops the process and returns an error.
     """
+    # Deserialize `criteria` if it's a string
+    if isinstance(poem_type.criteria, str):
+        try:
+            poem_type.criteria = json.loads(poem_type.criteria)
+        except json.JSONDecodeError:
+            return jsonify({'error': 'Poem type criteria is not valid JSON. ⚡️'}), 500
+
     max_allowed_lines = poem_type.criteria.get('max_lines', None)
+
     # Check if max lines is defined in criteria
     if max_allowed_lines is None:
         return jsonify({'error': 'Poem type criteria missing max_lines definition. ⚡️'}), 500
-    
+
     # Check if adding another line would exceed max lines
     if len(existing_contributions) + 1 > max_allowed_lines:
         return jsonify({'error': f'This poem has already reached the maximum number of {max_allowed_lines} lines. 🌿'}), 400
