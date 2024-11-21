@@ -34,13 +34,13 @@ def create_app():
 
     # Swagger-UI config
     SWAGGER_URL = "/api/docs"
-    API_URL = "/backend/poetica-vena.json"
+    API_URL = "backend/poetica-vena.json"
 
     swagger_ui_blueprint = get_swaggerui_blueprint(
         SWAGGER_URL,
         API_URL,
         config={
-            'app_name': 'Poetica Vena API'
+            'app_name': 'poeticaVENA API'
         }
     )
     app.register_blueprint(swagger_ui_blueprint, url_prefix=SWAGGER_URL)
