@@ -5,6 +5,8 @@ The poem_val.py file handles the validation logic for different poem types.
 from flask import jsonify
 from backend.poem_utils import get_last_contribution
 import logging
+import json
+
 
 def validate_poem_content(poem_type, current_poem_content, previous_lines):
     """
@@ -23,8 +25,6 @@ def validate_poem_content(poem_type, current_poem_content, previous_lines):
     # Add other poem types here as needed
     return None  # No validation needed for certain types
 
-
-import json
 
 def validate_max_lines(poem_type, existing_contributions):
     """
