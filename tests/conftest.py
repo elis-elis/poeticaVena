@@ -6,8 +6,10 @@ Calls create_app() to get a fresh instance of your app.
 Configures it with test-specific settings:
 TESTING: Activates Flask's testing mode.
 SQLALCHEMY_DATABASE_URI: Uses an in-memory SQLite database for isolated testing.
+JWT_SECRET_KEY="test-secret-key": Ensures JWT authentication works with a consistent secret in tests.
 Initializes the database (db.create_all()).
 Tears down the database after the tests (db.drop_all()).
+Ensures database setup and teardown happen within the application context.
 
 Client Fixture:
 Purpose: Provides a test client to simulate HTTP requests to your app.
@@ -30,17 +32,19 @@ def app():
     """
     Create and configure a new app instance for testing.
     """
-    app = create_app({
-        "TESTING": True,  # Enables testing mode (disables error catching)
-        "SQLALCHEMY_DATABASE_URI": "sqlite:///:memory:",  # Use in-memory DB
-        "SQLALCHEMY_TRACK_MODIFICATIONS": False,
-    })
+    app = create_app()
+    app.config.updater(
+        TESTING=True,  # Enables testing mode (disables error catching)
+        SQLALCHEMY_DATABASE_URI="sqlite:///:memory:",  # Use in-memory SQLite DB
+        SQLALCHEMY_TRACK_MODIFICATIONS=False,   # Suppress warning messages
+        JWT_SECRET_KEY="test_secret_key"    # Use a test-specific secret
+    )
 
     with app.app_context():
-        db.create_all()  # Create tables
+        db.create_all()  # Initialize tables in the test database
         yield app   # Provide the app for testing
-        db.session.remove()  # Clean up the session
-        db.drop_all()   # Drop tables after tests
+        db.session.remove()  # Remove session after tests
+        db.drop_all()   # Drop tables after tests to clean up
 
 
 @pytest.fixture

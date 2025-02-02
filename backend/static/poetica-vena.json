@@ -1,11 +1,11 @@
 {
 	"swagger": "2.0",
     "info": {
-        "title": "poeticaVENA API",
+        "title": "poeticaVENA API *meaw*",
         "version": "1.0.0"
     },
-    "servers": [{ "url": "https://poeticavena.onrender.com" }],
-    "schemes": ["https"],
+    "servers": [{ "url": "http://localhost:5001" }],
+    "schemes": ["http"],
     "securityDefinitions": {
         "BearerAuth": {
             "type": "apiKey",

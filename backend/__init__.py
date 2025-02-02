@@ -27,10 +27,10 @@ from flask_migrate import Migrate
 def create_app():
     app = Flask(__name__)
 
-    # CORS(app, origins=["http://localhost:3000"])  # Next.js frontend
     # Allow CORS for the frontend domain
-    # CORS(app, resources={r"/*": {"origins": ["http://localhost:3000", "https://your-frontend-domain.com"]}}, supports_credentials=True)
-    CORS(app, resources={r"/*": {"origins": "https://poeticavena.onrender.com"}})
+    CORS(app, origins="http://localhost:3000", supports_credentials=True)
+    # CORS(app, resources={r"/*": {"origins": "https://poeticavena.onrender.com"}})
+    # CORS(app, resources={r"/*": {"origins": "http://localhost:3000"}}, supports_credentials=True)
 
     # Swagger-UI config
     SWAGGER_URL = "/api/docs"
@@ -70,7 +70,7 @@ def create_app():
 
     with app.app_context():  # Ensure it is within the application context for database operations
         initialize_poem_types()
-    
+
     @app.route('/protected', methods=['GET'])
     @jwt_required()
     def protected():
